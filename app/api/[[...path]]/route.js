@@ -255,15 +255,13 @@ export async function GET(request) {
       let p = null;
       if (db) {
         await ensureSeed(db);
-        p = await db
-          .collection("products")
-          .findOne(
-            {
-              $or: [{ slug: parts[1] }, { id: parts[1] }],
-              status: { $ne: "archived" },
-            },
-            { projection: { _id: 0 } },
-          );
+        p = await db.collection("products").findOne(
+          {
+            $or: [{ slug: parts[1] }, { id: parts[1] }],
+            status: { $ne: "archived" },
+          },
+          { projection: { _id: 0 } },
+        );
       }
       if (!p)
         p = PRODUCTS.find((x) => x.slug === parts[1] || x.id === parts[1]);
@@ -749,14 +747,12 @@ export async function POST(request) {
           .deleteOne({ userId: wuser.userId, productId });
         return json({ ok: true, added: false });
       }
-      await wdb
-        .collection("wishlist")
-        .insertOne({
-          id: uuidv4(),
-          userId: wuser.userId,
-          productId,
-          createdAt: new Date().toISOString(),
-        });
+      await wdb.collection("wishlist").insertOne({
+        id: uuidv4(),
+        userId: wuser.userId,
+        productId,
+        createdAt: new Date().toISOString(),
+      });
       return json({ ok: true, added: true });
     }
 
@@ -773,17 +769,15 @@ export async function POST(request) {
         if (user) {
           const token = makeResetToken();
           const expiresAt = new Date(Date.now() + 1000 * 60 * 30).toISOString();
-          await db
-            .collection("password_resets")
-            .insertOne({
-              id: uuidv4(),
-              userId: user.id,
-              email,
-              token,
-              expiresAt,
-              used: false,
-              createdAt: new Date().toISOString(),
-            });
+          await db.collection("password_resets").insertOne({
+            id: uuidv4(),
+            userId: user.id,
+            email,
+            token,
+            expiresAt,
+            used: false,
+            createdAt: new Date().toISOString(),
+          });
           const base =
             process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
           const resetUrl = `${base}/reset-password?token=${token}`;
@@ -950,20 +944,18 @@ export async function POST(request) {
       }
       let updated = null;
       if (db) {
-        await db
-          .collection("orders")
-          .updateOne(
-            { id: orderId },
-            {
-              $set: {
-                paymentStatus: "paid",
-                status: "confirmed",
-                razorpayPaymentId: razorpay_payment_id,
-                razorpaySignature: razorpay_signature,
-                paidAt: new Date().toISOString(),
-              },
+        await db.collection("orders").updateOne(
+          { id: orderId },
+          {
+            $set: {
+              paymentStatus: "paid",
+              status: "confirmed",
+              razorpayPaymentId: razorpay_payment_id,
+              razorpaySignature: razorpay_signature,
+              paidAt: new Date().toISOString(),
             },
-          );
+          },
+        );
         updated = await db
           .collection("orders")
           .findOne({ id: orderId }, { projection: { _id: 0 } });
@@ -1226,19 +1218,17 @@ export async function POST(request) {
       parts[2] === "homepage"
     ) {
       if (db) {
-        await db
-          .collection("content")
-          .updateOne(
-            { key: "homepage" },
-            {
-              $set: {
-                key: "homepage",
-                value: body,
-                updatedAt: new Date().toISOString(),
-              },
+        await db.collection("content").updateOne(
+          { key: "homepage" },
+          {
+            $set: {
+              key: "homepage",
+              value: body,
+              updatedAt: new Date().toISOString(),
             },
-            { upsert: true },
-          );
+          },
+          { upsert: true },
+        );
         await log(db, "cms.homepage", {});
       }
       return json({ ok: true });
@@ -1246,19 +1236,17 @@ export async function POST(request) {
 
     if (parts[0] === "admin" && parts[1] === "settings") {
       if (db) {
-        await db
-          .collection("content")
-          .updateOne(
-            { key: "settings" },
-            {
-              $set: {
-                key: "settings",
-                value: body,
-                updatedAt: new Date().toISOString(),
-              },
+        await db.collection("content").updateOne(
+          { key: "settings" },
+          {
+            $set: {
+              key: "settings",
+              value: body,
+              updatedAt: new Date().toISOString(),
             },
-            { upsert: true },
-          );
+          },
+          { upsert: true },
+        );
         await log(db, "settings.update", {});
       }
       return json({ ok: true });
@@ -1375,6 +1363,8 @@ function defaultHomepage() {
       "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-craftsman-working-on-a-leather-belt-45735-large.mp4",
     heroPoster:
       "https://images.pexels.com/photos/33242820/pexels-photo-33242820.jpeg?auto=compress&cs=tinysrgb&w=2400&q=85",
+    loginBanner: "/uploads/images/login-banner.jpg",
+    signupBanner: "/uploads/images/signup-banner.jpg",
     experienceEyebrow: "Experience Inclex",
     experienceHeading: "Crafted With Purpose",
     experienceSubtitle:
