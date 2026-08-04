@@ -28,11 +28,17 @@ const uri = process.env.MONGO_URL;
 const dbName = process.env.DB_NAME || "inclex";
 
 let cachedClient = null;
+let cachedDb = null;
+
 export async function getDb() {
-  // changed this function to solve login error
   if (!uri) {
     console.error("❌ MONGO_URL is missing.");
     return null;
+  }
+
+  // Reuse an already connected database
+  if (cachedDb) {
+    return cachedDb;
   }
 
   try {
@@ -42,35 +48,28 @@ export async function getDb() {
       console.log("Database:", dbName);
 
       cachedClient = new MongoClient(uri);
-      await cachedClient.connect();
-
-      console.log("✅ MongoDB Connected Successfully");
     }
 
-    return cachedClient.db(dbName);
+    await cachedClient.connect();
+
+    console.log("✅ MongoDB Connected Successfully");
+
+    cachedDb = cachedClient.db(dbName);
+
+    return cachedDb;
   } catch (err) {
-    console.error("❌ MongoDB Connection Error:");
-    console.error(err);
+    console.error("❌ MongoDB Connection Error:", err);
+
+    // IMPORTANT: reset cache on failure
+    cachedClient = null;
+    cachedDb = null;
 
     return null;
   }
 }
 
 async function ensureSeed(db) {
-  if (!db) return;
-  const col = db.collection("products");
-  const count = await col.countDocuments();
-  if (count === 0) {
-    await col.insertMany(
-      PRODUCTS.map((p) => ({
-        ...p,
-        status: "published",
-        featured: p.badges.includes("Best Seller"),
-        stock: 42,
-        createdAt: new Date().toISOString(),
-      })),
-    );
-  }
+  return;
 }
 
 const cors = {
@@ -263,8 +262,7 @@ export async function GET(request) {
           { projection: { _id: 0 } },
         );
       }
-      if (!p)
-        p = PRODUCTS.find((x) => x.slug === parts[1] || x.id === parts[1]);
+     
       if (!p) return json({ error: "Not found" }, 404);
       return json({ product: p });
     }
@@ -279,7 +277,7 @@ export async function GET(request) {
           .find({ status: { $ne: "archived" } }, { projection: { _id: 0 } })
           .toArray();
       }
-      if (list.length === 0) list = PRODUCTS;
+
       const q = (url.searchParams.get("q") || "").toLowerCase();
       const category = url.searchParams.get("category");
       if (q)
@@ -1325,7 +1323,17 @@ export async function DELETE(request) {
 
     if (parts[0] === "admin" && parts[1] === "products" && parts[2]) {
       if (db) {
-        await db.collection("products").deleteOne({ id: parts[2] });
+        console.log("================================");
+        console.log("Trying to delete product");
+        console.log("ID received from URL:", parts[2]);
+
+        const result = await db.collection("products").deleteOne({
+          id: parts[2],
+        });
+
+        console.log("Delete Result:", result);
+        console.log("Deleted Count:", result.deletedCount);
+        console.log("================================");
         await log(db, "product.delete", { id: parts[2] });
       }
       return json({ ok: true });

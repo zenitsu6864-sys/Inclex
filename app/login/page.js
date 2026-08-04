@@ -8,19 +8,6 @@ import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import { useUser } from "@/components/site/UserContext";
 
-// const [heroImage, setHeroImage] = useState("");
-
-// useEffect(() => {
-//   fetch("/api/content/homepage")
-//     .then((res) => res.json())
-//     .then((data) => {
-//       setHeroImage(
-//         data.homepage?.loginBanner ||
-//           "/uploads/images/login-banner.jpg"
-//       );
-//     });
-// }, []);
-
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -98,17 +85,14 @@ export default function LoginPage() {
             </div>
             <div>
               <h2 className="font-serif text-5xl leading-tight">
-                Your studio,
-                <br />
-                ready when you are.
+              Enter your INCLEX account.
               </h2>
               <p className="mt-4 max-w-sm text-white/70">
-                Track orders, save designs, and pick up right where you left
-                off.
+                Exclusive Access
               </p>
             </div>
             <div className="text-[11px] uppercase tracking-[0.24em] text-white/50">
-              Est. Bengaluru — India
+             ORIGIN   INDIA
             </div>
           </div>
         </div>
