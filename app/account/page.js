@@ -48,7 +48,7 @@ export default function AccountOverview() {
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard icon={Package} label="Orders placed" value={orders.length} />
-        <StatCard icon={Sparkles} label="Lifetime spent" value={`₹${fmt(totalSpent)}`} />
+        {/* <StatCard icon={Sparkles} label="Lifetime spent" value={`₹${fmt(totalSpent)}`} /> */}
         <StatCard icon={Heart} label="Wishlist" value={wishlistCount} href="/account/wishlist" />
       </div>
 
