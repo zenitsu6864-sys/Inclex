@@ -67,6 +67,7 @@ function Hero({ c }) {
           <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 md:text-[15px]">
             {c.heroSubtitle}
           </p>
+<<<<<<< HEAD
           <div className="mt-10">
             <Link
               href={c.heroPrimaryHref || "/shop"}
@@ -74,6 +75,17 @@ function Hero({ c }) {
             >
               {c.heroPrimaryCta}
               <ArrowRight className="h-4 w-4" />
+=======
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <Link href={c.heroPrimaryHref || "/shop"} className="btn-gold">
+              {c.heroPrimaryCta} <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href={c.heroSecondaryHref || "/customize"}
+              className="btn-ghost-light"
+            >
+              {c.heroSecondaryCta} <span className="text-[#C9A227]">⌘</span>
+>>>>>>> product/info
             </Link>
           </div>
         </motion.div>
