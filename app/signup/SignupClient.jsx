@@ -18,23 +18,7 @@ import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import { useUser } from "@/components/site/UserContext";
 
-// const [heroImage, setHeroImage] = useState("");
-// useEffect(() => {
-
-//   fetch("/api/content/homepage")
-//     .then(res => res.json())
-//     .then(data => {
-
-//       setHeroImage(
-//         data.homepage?.signupBanner ||
-//         "/uploads/images/signup-banner.jpg"
-//       );
-
-//     });
-
-// }, []);
-
-export default function SignupPage() {
+export default function SignupClient(){
   const router = useRouter();
   const params = useSearchParams();
   const redirect = params.get("redirect") || "/account";
