@@ -15,7 +15,7 @@ export default function CartDrawer() {
         onClick={() => setOpen(false)}
       />
       <aside
-        className={`absolute right-0 top-0 h-full w-full max-w-md bg-[#F8F7F4] shadow-2xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? 'translate-x-0 pointer-events-auto' : 'translate-x-full'}`}
+        className={`absolute right-0 top-0 h-full w-full max-w-md bg-[#F8F7F4] shadow-2xl transition-transform duration-500 ease-out ${open ? 'translate-x-0 pointer-events-auto' : 'translate-x-full'}`}
         role="dialog" aria-label="Shopping bag"
       >
         <div className="flex items-center justify-between border-b border-black/10 px-6 py-5">

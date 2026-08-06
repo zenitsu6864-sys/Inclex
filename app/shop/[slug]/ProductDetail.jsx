@@ -284,7 +284,7 @@ export default function ProductDetail({ product, related }) {
                   <img
                     src={p.images[0]}
                     alt={p.name}
-                    className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   />
                 </div>
                 <div className="p-5">
