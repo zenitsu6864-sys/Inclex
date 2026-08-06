@@ -75,14 +75,6 @@ function Hero({ c }) {
               {c.heroPrimaryCta}
               <ArrowRight className="h-4 w-4" />
             </Link>
-
-            <Link
-              href={c.heroSecondaryHref || "/customize"}
-              className="btn-ghost-light"
-            >
-              {c.heroSecondaryCta}
-              <span className="text-[#C9A227]">⌘</span>
-            </Link>
           </div>
         </motion.div>
 

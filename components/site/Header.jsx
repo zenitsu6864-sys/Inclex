@@ -20,12 +20,11 @@ function TopBar({ announcement, coupon }) {
 }
 
 const LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'Shop', href: '/shop' },
-  { label: 'Customize', href: '/customize' },
-  { label: 'Corporate Orders', href: '/corporate-orders' },
-  { label: 'About Us', href: '/about' },
-  { label: 'Contact', href: '/contact' },
+  { label: "Home", href: "/" },
+  { label: "Shop", href: "/shop" },
+  { label: "Product Information", href: "/product-information" },
+  { label: "About Us", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export default function Header({ variant = 'light', overlay = false }) {

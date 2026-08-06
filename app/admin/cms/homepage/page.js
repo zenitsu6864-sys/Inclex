@@ -101,16 +101,6 @@ export default function HomepageCMS() {
               value={content.heroPrimaryHref}
               onChange={set("heroPrimaryHref")}
             />
-            {/* <Field
-              label="Secondary CTA text"
-              value={content.heroSecondaryCta}
-              onChange={set("heroSecondaryCta")}
-            />
-            <Field
-              label="Secondary link"
-              value={content.heroSecondaryHref}
-              onChange={set("heroSecondaryHref")}
-            /> */}
           </div>
           <Field
             label="Hero Video URL (mp4)"

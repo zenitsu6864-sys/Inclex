@@ -15,7 +15,7 @@ const SPECIFICATIONS = [
   {
     icon: Ruler,
     title: "Dimensions",
-    value: "85 × 18 × 18 mm",
+    value: "5.5 × 2.5 × 2.5 mm",
   },
   {
     icon: Weight,
@@ -25,17 +25,17 @@ const SPECIFICATIONS = [
   {
     icon: Droplets,
     title: "Capacity",
-    value: "5 ml",
+    value: "50 Refills",
   },
   {
     icon: ShieldCheck,
     title: "Material",
-    value: "Premium Aluminium Alloy",
+    value: "Premium POM",
   },
   {
     icon: Sparkles,
     title: "Finish",
-    value: "Matte Luxury Finish",
+    value: "Luxury Matte Finish",
   },
   {
     icon: Package,
@@ -65,9 +65,7 @@ export default function ProductSpecifications() {
             Specifications
           </div>
 
-          <h2 className="mt-4 font-serif text-4xl">
-            Technical Details
-          </h2>
+          <h2 className="mt-4 font-serif text-4xl">Technical Details</h2>
 
           <p className="mx-auto mt-3 max-w-2xl text-neutral-600 leading-7">
             Every Keyfume is engineered using premium materials for durability,
