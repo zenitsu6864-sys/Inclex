@@ -209,7 +209,7 @@ export default function ProductDetail({ product, related }) {
                 <span className="text-neutral-500">Above ₹499</span>
               </span>
             </div>
-            <div className="flex items-start gap-2">
+            {/* <div className="flex items-start gap-2">
               <RefreshCw className="h-4 w-4 text-[#C9A227]" />
               <span>
                 Easy returns
@@ -224,7 +224,7 @@ export default function ProductDetail({ product, related }) {
                 <br />
                 <span className="text-neutral-500">Guaranteed</span>
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
       </section>
