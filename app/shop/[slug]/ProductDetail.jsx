@@ -47,16 +47,12 @@ export default function ProductDetail({ product, related }) {
 
       <section className="container-editorial grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20 items-start pt-10 pb-20">
         {/* Gallery */}
-        <div className="lg:sticky lg:top-24">
+        <div className="relative lg:sticky lg:top-24">
           <div className="mx-auto w-full max-w-[540px]">
             <div className="relative w-full aspect-[4/5] overflow-hidden rounded-2xl bg-[#EFEDE7] shadow-lg">
-              <motion.img
-                key={active}
+              <img
                 src={product.images[active]}
                 alt={product.name}
-                initial={{ opacity: 0, scale: 1.02 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6 }}
                 className="h-full w-full object-cover"
               />
               <div className="absolute left-3 top-3 flex flex-wrap gap-1">
@@ -89,7 +85,7 @@ export default function ProductDetail({ product, related }) {
         </div>
 
         {/* Buy panel */}
-       <div className="self-start lg:sticky lg:top-24 xl:pl-8">
+        <div className="relative self-start lg:sticky lg:top-24 xl:pl-8">
           <div className="eyebrow flex items-center gap-3">
             <span className="hairline" />
             Signature Collection
@@ -130,7 +126,7 @@ export default function ProductDetail({ product, related }) {
             Inclusive of all taxes. Free shipping above ₹499.
           </p>
 
-         <p className="mt-6 text-base leading-8 text-neutral-700">
+          <p className="mt-6 text-base leading-8 text-neutral-700">
             {product.description}
           </p>
 
@@ -172,7 +168,7 @@ export default function ProductDetail({ product, related }) {
           </div>
 
           {/* Qty + Add */}
-       <div className="mt-8 flex gap-4">
+          <div className="mt-8 flex gap-4">
             <div className="inline-flex items-center rounded-sm border border-black/10 bg-white">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -192,7 +188,7 @@ export default function ProductDetail({ product, related }) {
             </div>
             <button
               onClick={() => add(product, { color, engraving, qty })}
-            className="btn-dark flex-1 h-14 text-sm uppercase tracking-[0.18em]"
+              className="btn-dark flex-1 h-14 text-sm uppercase tracking-[0.18em]"
             >
               Add to Bag — ₹{fmt(product.price * qty)}
             </button>

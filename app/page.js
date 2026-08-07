@@ -42,18 +42,18 @@ function Hero({ c }) {
 
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-black text-white">
-      <div className="container-editorial relative z-10 grid min-h-[100svh] grid-cols-12 items-center gap-8 pb-24 pt-32 md:pt-40">
+      <div className="container-editorial relative z-10 grid min-h-[100svh] grid-cols-1 lg:grid-cols-12 items-center gap-8 pb-24 pt-24 md:pt-40 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="col-span-12 md:col-span-5 lg:col-span-4"
+         className="lg:col-span-4 order-1"
         >
           <div className="eyebrow mb-6 flex items-center gap-3">
             <span className="hairline" />
             {c.heroEyebrow}
           </div>
-          <h1 className="font-serif text-[54px] leading-[1.02] tracking-tight md:text-[68px] lg:text-[78px]">
+         <h1 className="font-serif text-[44px] sm:text-[52px] md:text-[68px] lg:text-[78px] leading-[1.02] tracking-tight break-words">
             {head ? (
               <>
                 {head}
@@ -80,11 +80,11 @@ function Hero({ c }) {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          className="col-span-12 md:col-span-7 lg:col-span-8"
+          className="lg:col-span-8 order-2 mt-8 lg:mt-0"
         >
           <motion.div
             style={{ y: parY, scale: parScale }}
-            className="relative aspect-[16/10] w-full overflow-hidden rounded-sm shadow-[0_50px_120px_-30px_rgba(0,0,0,0.7)] ring-1 ring-white/5"
+          className="relative w-full max-w-full aspect-[4/5] sm:aspect-[16/10] overflow-hidden rounded-sm shadow-[0_50px_120px_-30px_rgba(0,0,0,0.7)] ring-1 ring-white/5"
           >
             <video
               ref={videoRef}
