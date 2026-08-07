@@ -277,12 +277,8 @@ function UpcomingProduct({ c }) {
               alt={c.upcomingHeading}
               width={1200}
               height={900}
-              className="w-full rounded-sm object-cover"
-            />{" "}
-            <img
-              src={c.upcomingImage}
-              alt={c.upcomingHeading}
-              className="w-full object-cover rounded-sm"
+              priority
+              className="w-full h-auto rounded-sm object-cover"
             />
           </div>
         </div>

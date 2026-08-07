@@ -14,11 +14,6 @@ import {
 } from "lucide-react";
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
-import {
-  CATEGORIES,
-  MATERIALS,
-  FEATURES_FILTER,
-} from "@/lib/data/products";
 import { useCart } from "@/components/site/CartContext";
 import WishlistButton from "@/components/site/WishlistButton";
 
@@ -44,10 +39,8 @@ const fmt = (n) =>
   new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
 
 export default function ShopPage() {
-  const [category, setCategory] = useState("All Products");
-  const [materialSel, setMaterialSel] = useState({});
+
   const [priceRange, setPriceRange] = useState("all");
-  const [featureSel, setFeatureSel] = useState({});
   const [colorSel, setColorSel] = useState({});
   const [view, setView] = useState("grid");
   const [sort, setSort] = useState("newest");
@@ -56,65 +49,69 @@ export default function ShopPage() {
 
   useEffect(() => {
     async function loadProducts() {
-        try {
-            const res = await fetch("/api/products", {
-                cache: "no-store",
-            });
+      try {
+        const res = await fetch("/api/products", {
+          cache: "no-store",
+        });
 
-            const data = await res.json();
+        const data = await res.json();
 
-            setProducts(data.products || []);
-        } catch (err) {
-            console.error(err);
-        }
+        setProducts(data.products || []);
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     loadProducts();
-}, []);
+  }, []);
 
-  const filtered = useMemo(() => {
+const filtered = useMemo(() => {
   let list = [...products];
-    if (category !== "All Products") {
-      if (category === "Personalized")
-        list = list.filter((p) => p.features.some((f) => /personal/i.test(f)));
-      else list = list.filter((p) => p.material === category);
-    }
-    const activeMats = Object.keys(materialSel).filter((k) => materialSel[k]);
-    if (activeMats.length)
-      list = list.filter(
-        (p) =>
-          activeMats.includes(p.material) ||
-          (p.material === "Metal" && activeMats.includes("Stainless Steel")),
-      );
-    if (priceRange === "under_500") list = list.filter((p) => p.price < 500);
-    if (priceRange === "500_1000")
-      list = list.filter((p) => p.price >= 500 && p.price <= 1000);
-    if (priceRange === "above_1000") list = list.filter((p) => p.price > 1000);
-    const activeFeats = Object.keys(featureSel).filter((k) => featureSel[k]);
-    if (activeFeats.length)
-      list = list.filter((p) =>
-        activeFeats.every(
-          (f) =>
-            p.badges.includes(f) ||
-            p.features.some((x) => x.includes(f.replace("able", ""))) ||
-            (f === "Personalizable" &&
-              p.features.some((x) => /personal/i.test(x))),
-        ),
-      );
-    const activeColors = Object.keys(colorSel).filter((k) => colorSel[k]);
-    if (activeColors.length)
-      list = list.filter((p) => p.colors.some((c) => activeColors.includes(c)));
-    if (sort === "price_asc") list.sort((a, b) => a.price - b.price);
-    if (sort === "price_desc") list.sort((a, b) => b.price - a.price);
-    if (sort === "rating") list.sort((a, b) => b.rating - a.rating);
-    return list;
-  }, [products, category, materialSel, priceRange, featureSel, colorSel, sort]);
+
+  // Price Filter
+  if (priceRange === "under_500") {
+    list = list.filter((p) => p.price < 500);
+  }
+
+  if (priceRange === "500_1000") {
+    list = list.filter(
+      (p) => p.price >= 500 && p.price <= 1000
+    );
+  }
+
+  if (priceRange === "above_1000") {
+    list = list.filter((p) => p.price > 1000);
+  }
+
+  // Color Filter
+  const activeColors = Object.keys(colorSel).filter(
+    (k) => colorSel[k]
+  );
+
+  if (activeColors.length) {
+    list = list.filter((p) =>
+      p.colors.some((c) => activeColors.includes(c))
+    );
+  }
+
+  // Sorting
+  if (sort === "price_asc") {
+    list.sort((a, b) => a.price - b.price);
+  }
+
+  if (sort === "price_desc") {
+    list.sort((a, b) => b.price - a.price);
+  }
+
+  if (sort === "rating") {
+    list.sort((a, b) => b.rating - a.rating);
+  }
+
+  return list;
+}, [products, priceRange, colorSel, sort]);
 
   const clearAll = () => {
-    setCategory("All Products");
-    setMaterialSel({});
     setPriceRange("all");
-    setFeatureSel({});
     setColorSel({});
   };
 
@@ -149,9 +146,11 @@ export default function ShopPage() {
       <section className="container-editorial py-12 md:py-16">
         <div className="grid grid-cols-12 gap-8">
           {/* Sidebar */}
+          {/* Sidebar */}
           <aside className="col-span-12 md:col-span-3">
             <div className="flex items-center justify-between border-b border-black/10 pb-3">
               <span className="font-serif text-lg">Filters</span>
+
               <button
                 onClick={clearAll}
                 className="text-xs uppercase tracking-[0.18em] text-neutral-500 hover:text-black"
@@ -160,64 +159,7 @@ export default function ShopPage() {
               </button>
             </div>
 
-            <FilterSection title="Categories">
-              <ul className="space-y-2 text-sm">
-                {CATEGORIES.map((c) => (
-                  <li key={c}>
-                    <button
-                      onClick={() => setCategory(c)}
-                      className={`flex w-full items-center justify-between py-1 text-left transition ${category === c ? "text-black font-semibold" : "text-neutral-600 hover:text-black"}`}
-                    >
-                      <span>{c}</span>
-                      <span className="text-xs text-neutral-400">
-                        {c === "All Products"
-                          ? products.length
-                          : c === "Personalized"
-                            ? products.filter((p) =>
-                                p.features.some((f) => /personal/i.test(f)),
-                              ).length
-                            : products.filter((p) => p.material === c).length}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </FilterSection>
-
-            <FilterSection title="Material">
-              <ul className="space-y-2 text-sm">
-                {MATERIALS.map((m) => (
-                  <li key={m} className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!materialSel[m]}
-                        onChange={(e) =>
-                          setMaterialSel((s) => ({
-                            ...s,
-                            [m]: e.target.checked,
-                          }))
-                        }
-                        className="h-4 w-4 rounded-sm border-black/20 accent-[#C9A227]"
-                      />
-                      <span>{m}</span>
-                    </label>
-                    <span className="text-xs text-neutral-400">
-                      (
-                      {
-                       products.filter(
-                          (p) =>
-                            p.material === m ||
-                            (m === "Stainless Steel" && p.material === "Metal"),
-                        ).length
-                      }
-                      )
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </FilterSection>
-
+            {/* Price */}
             <FilterSection title="Price">
               <ul className="space-y-2 text-sm">
                 {[
@@ -226,7 +168,7 @@ export default function ShopPage() {
                   { id: "500_1000", label: "₹500 – ₹1,000" },
                   { id: "above_1000", label: "Above ₹1,000" },
                 ].map((o) => (
-                  <li key={o.id} className="flex items-center justify-between">
+                  <li key={o.id}>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
@@ -242,43 +184,28 @@ export default function ShopPage() {
               </ul>
             </FilterSection>
 
+            {/* Color */}
             <FilterSection title="Color">
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3">
                 {COLORS.map((c) => (
                   <button
                     key={c.name}
-                    onClick={() =>
-                      setColorSel((s) => ({ ...s, [c.name]: !s[c.name] }))
-                    }
                     title={c.name}
-                    className={`h-7 w-7 rounded-full border transition ${colorSel[c.name] ? "border-black ring-2 ring-offset-2 ring-[#C9A227]" : "border-black/20"}`}
+                    onClick={() =>
+                      setColorSel((s) => ({
+                        ...s,
+                        [c.name]: !s[c.name],
+                      }))
+                    }
+                    className={`h-8 w-8 rounded-full border transition ${
+                      colorSel[c.name]
+                        ? "border-black ring-2 ring-[#C9A227] ring-offset-2"
+                        : "border-black/20"
+                    }`}
                     style={{ backgroundColor: c.hex }}
                   />
                 ))}
               </div>
-            </FilterSection>
-
-            <FilterSection title="Features">
-              <ul className="space-y-2 text-sm">
-                {FEATURES_FILTER.map((f) => (
-                  <li key={f} className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={!!featureSel[f]}
-                        onChange={(e) =>
-                          setFeatureSel((s) => ({
-                            ...s,
-                            [f]: e.target.checked,
-                          }))
-                        }
-                        className="h-4 w-4 rounded-sm border-black/20 accent-[#C9A227]"
-                      />
-                      <span>{f}</span>
-                    </label>
-                  </li>
-                ))}
-              </ul>
             </FilterSection>
           </aside>
 
@@ -354,15 +281,15 @@ export default function ShopPage() {
                         </span>
                       ))}
                     </div>
-<div
-  className="absolute right-3 top-3"
-  onClick={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }}
->
-  <WishlistButton product={p} />
-</div>
+                    <div
+                      className="absolute right-3 top-3"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                    >
+                      <WishlistButton product={p} />
+                    </div>
                   </Link>
                   <div className="p-5 flex-1">
                     <Link href={`/shop/${p.slug}`}>
@@ -435,33 +362,47 @@ export default function ShopPage() {
               </div>
             )}
 
-            {/* Coming soon banner */}
-            <div className="mt-12 grid grid-cols-12 items-center gap-6 rounded-sm bg-white p-6 md:p-8">
-              <div className="col-span-12 md:col-span-7">
-                <div className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-[#F8F7F4] text-[#C9A227]">
-                    <Sparkles className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <div className="font-serif text-xl md:text-2xl leading-snug">
-                      More premium pieces
-                      <br />
-                      coming your way.
-                    </div>
+            {/* Upcoming Product */}
+            <section className="mt-16 overflow-hidden rounded-sm bg-black text-white">
+              <div className="grid grid-cols-1 items-center lg:grid-cols-2">
+                {/* Left */}
+                <div className="px-8 py-10 md:px-14 md:py-16">
+                  <div className="flex items-center gap-3">
+                    <span className="h-px w-12 bg-[#C9A227]" />
+                    <span className="text-xs font-semibold uppercase tracking-[0.25em] text-[#C9A227]">
+                      Upcoming Product
+                    </span>
+                  </div>
+
+                  <h2 className="mt-6 font-serif text-4xl leading-tight md:text-5xl">
+                    INCLEX Pocket Perfume
+                  </h2>
+
+                  <p className="mt-5 max-w-md text-white/70">
+                    Two Vibes. One Luxury. Already prefilled. Ready when you
+                    are.
+                  </p>
+
+                  <div className="mt-8">
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-2 rounded-sm bg-[#C9A227] px-7 py-3 text-sm font-semibold text-black transition hover:opacity-90"
+                    >
+                      Notify Me →
+                    </Link>
                   </div>
                 </div>
-                <p className="mt-3 max-w-lg text-sm text-neutral-500">
-                  We’re crafting new designs and collections that you’ll love.
-                </p>
+
+                {/* Right */}
+                <div className="h-full">
+                  <img
+                    src="/uploads/images/1786063669904-civ60p69a1r.jpeg"
+                    alt="INCLEX Pocket Perfume"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               </div>
-              <div className="col-span-12 md:col-span-5">
-                <img
-                  src="https://images.pexels.com/photos/28028334/pexels-photo-28028334.jpeg?auto=compress&cs=tinysrgb&w=1200&q=85"
-                  alt="Coming soon"
-                  className="h-40 w-full rounded-sm object-cover md:h-32"
-                />
-              </div>
-            </div>
+            </section>
           </div>
         </div>
       </section>
