@@ -48,20 +48,20 @@ export default function ContactPage() {
       <Header variant="light" />
 
       <section className="container-editorial py-16 md:py-24">
-        <div className="grid grid-cols-12 gap-10">
-          <div className="col-span-12 md:col-span-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="eyebrow flex items-center gap-3">
               <span className="hairline" />
               Contact INCLEX
             </div>
 
-            <h1 className="mt-4 font-serif text-5xl leading-tight md:text-6xl">
+         <h1 className="mt-4 font-serif text-4xl sm:text-5xl lg:text-6xl leading-tight max-w-full">
               Let's Build
-              {/* <br /> */}
+              <br className="hidden sm:block" />
               Something Premium.
             </h1>
 
-            <p className="mt-5 max-w-md text-neutral-600">
+            <p className="mt-5 max-w-full md:max-w-md text-neutral-600 leading-7">
               Whether you have a product inquiry, business proposal, wholesale
               request, customization idea, or need customer support, our team is
               here to help. We aim to respond within one business day.
@@ -106,12 +106,12 @@ export default function ContactPage() {
             </ul>
           </div>
 
-          <div className="col-span-12 md:col-span-7">
+         <div className="lg:col-span-7">
             <form
               onSubmit={submit}
-              className="rounded-sm border border-black/10 bg-white p-8 md:p-10"
+              className="rounded-sm border border-black/10 bg-white p-6 md:p-10"
             >
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                 <Field
                   label="Full Name"
                   value={form.name}
@@ -150,10 +150,10 @@ export default function ContactPage() {
                   required
                   rows={6}
                   placeholder="Tell us how we can help…"
-                  className="mt-2 w-full rounded-sm border border-black/10 bg-white px-4 py-3 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
+                  className="mt-2 w-full min-w-0 rounded-sm border border-black/10 bg-white px-4 py-3 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
                 />
               </div>
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-6 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <p className="text-xs text-neutral-500">
                   By submitting you agree to our{" "}
                   <a href="/policy/privacy" className="underline">
@@ -161,7 +161,10 @@ export default function ContactPage() {
                   </a>
                   .
                 </p>
-                <button disabled={sending} className="btn-dark">
+               <button
+  disabled={sending}
+  className="btn-dark w-full lg:w-auto"
+>
                   {sending ? "Sending…" : done ? "Sent ✓" : "Send Message"}{" "}
                   <Send className="h-4 w-4" />
                 </button>
@@ -211,7 +214,7 @@ function Field({ label, ...props }) {
       </span>
       <input
         {...props}
-        className="mt-2 rounded-sm border border-black/10 bg-white px-4 py-3 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
+        className="mt-2 w-full min-w-0 rounded-sm border border-black/10 bg-white px-4 py-3 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
       />
     </label>
   );

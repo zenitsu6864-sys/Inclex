@@ -248,37 +248,44 @@ function UpcomingProduct({ c }) {
   if (!c.upcomingEnabled) return null;
 
   return (
-    <section className="bg-black text-white">
-      <div className="container-editorial grid grid-cols-12 gap-14 items-center py-28">
-        <div className="col-span-12 lg:col-span-5">
+    <section className="bg-black text-white overflow-hidden">
+      <div className="container-editorial grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center py-16 md:py-24 lg:py-28">
+        {/* Left Content */}
+        <div className="order-1 lg:col-span-5">
           <div className="eyebrow flex items-center gap-3">
             <span className="hairline" />
             {c.upcomingEyebrow}
           </div>
 
-          <h2 className="mt-6 font-serif text-5xl leading-tight">
-            {c.upcomingHeading}
+          <h2 className="whitespace-pre-line mt-6 font-serif text-4xl sm:text-5xl lg:text-6xl leading-tight break-words">
+          {c.upcomingHeading.replace("Pocket Perfume", "Pocket\nPerfume")}
           </h2>
 
-          <p className="mt-6 text-white/70 leading-8">{c.upcomingSubtitle}</p>
+          <p className="mt-6 max-w-full lg:max-w-lg text-base leading-7 text-white/70">
+            {c.upcomingSubtitle}
+          </p>
 
-          <div className="mt-10">
-            <Link href={c.upcomingButtonLink} className="btn-gold">
+          <div className="mt-8 flex">
+            <Link
+              href={c.upcomingButtonLink}
+              className="btn-gold w-full sm:w-auto justify-center"
+            >
               {c.upcomingButtonText}
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </div>
         </div>
 
-        <div className="col-span-12 lg:col-span-7">
-          <div className="overflow-hidden rounded-sm">
+        {/* Right Image */}
+        <div className="order-2 lg:col-span-7">
+          <div className="w-full overflow-hidden rounded-sm">
             <Image
               src={c.upcomingImage}
               alt={c.upcomingHeading}
               width={1200}
               height={900}
               priority
-              className="w-full h-auto rounded-sm object-cover"
+              className="w-full h-auto rounded-sm object-contain"
             />
           </div>
         </div>
@@ -286,79 +293,93 @@ function UpcomingProduct({ c }) {
     </section>
   );
 }
-
 // ---------- Newsletter -------------------------------------------------------
 function Newsletter({ c }) {
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
+
   async function subscribe(e) {
     e.preventDefault();
+
     setSending(true);
+
     try {
       const r = await fetch("/api/newsletter", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ email }),
       });
+
       const data = await r.json();
+
       if (data.ok) {
-        toast.success("You’re on the list", {
+        toast.success("You're on the list", {
           description: "Welcome to Inclex.",
         });
+
         setDone(true);
         setEmail("");
-      } else toast.error(data.error || "Please enter a valid email");
+      } else {
+        toast.error(data.error || "Please enter a valid email");
+      }
     } catch {
       toast.error("Network error");
     } finally {
       setSending(false);
     }
   }
+
   return (
-    <section className="border-y border-black/[0.06] bg-[#F8F7F4] py-14">
-      <div className="container-editorial grid grid-cols-12 items-center gap-8">
-        <div className="col-span-12 md:col-span-5 flex items-center gap-5">
-          <span className="grid h-14 w-14 place-items-center rounded-full border border-black/10 bg-white text-[#C9A227]">
-            <Mail className="h-5 w-5" />
-          </span>
-          <div>
-            <div className="font-serif text-2xl leading-tight">
-              {c.newsletterHeading}
-            </div>
-            <div className="text-sm text-neutral-500">
-              {c.newsletterSubtitle}
+    <section className="border-y border-black/10 bg-[#F8F7F4] py-12 md:py-14">
+      <div className="container-editorial">
+        <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
+
+          <div className="lg:col-span-5 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+            <span className="grid h-16 w-16 shrink-0 place-items-center rounded-full border border-black/10 bg-white text-[#C9A227]">
+              <Mail className="h-6 w-6" />
+            </span>
+
+            <div>
+              <h2 className="font-serif text-3xl leading-tight">
+                {c.newsletterHeading}
+              </h2>
+
+              <p className="mt-1 text-neutral-500">
+                {c.newsletterSubtitle}
+              </p>
             </div>
           </div>
-        </div>
-        <form
-          onSubmit={subscribe}
-          className="col-span-12 md:col-span-7 flex flex-col gap-3 sm:flex-row"
-        >
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            className="flex-1 rounded-sm border border-black/10 bg-white px-5 py-3.5 text-sm text-black placeholder:text-neutral-400 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
-          />
-          <button
-            type="submit"
-            disabled={sending}
-            className="btn-dark min-w-[140px]"
+
+          <form
+            onSubmit={subscribe}
+            className="lg:col-span-7 flex flex-col sm:flex-row gap-4"
           >
-            {done ? (
-              <>
-                <Check className="h-4 w-4" /> Subscribed
-              </>
-            ) : sending ? (
-              "Subscribing…"
-            ) : (
-              "Subscribe"
-            )}
-          </button>
-        </form>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className="h-14 w-full rounded-sm border border-black/10 bg-white px-5 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
+            />
+
+            <button
+              type="submit"
+              disabled={sending}
+              className="btn-dark h-14 w-full sm:w-auto sm:min-w-[180px] justify-center"
+            >
+              {done
+                ? "Subscribed ✓"
+                : sending
+                ? "Subscribing..."
+                : "Subscribe"}
+            </button>
+          </form>
+
+        </div>
       </div>
     </section>
   );
