@@ -17,9 +17,7 @@ import {
 import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 import { DEFAULT_HOMEPAGE, fetchHomepage } from "@/lib/data/content";
-
-const CUSTOMIZE_IMG =
-  "https://images.unsplash.com/photo-1599066852653-42826a50b163?auto=format&fit=crop&w=1400&q=90";
+import Image from "next/image";
 
 // ---------- Hero -------------------------------------------------------------
 function Hero({ c }) {
@@ -245,74 +243,49 @@ function Experience({ c }) {
   );
 }
 
-// ---------- Customize teaser ------------------------------------------------
-function CustomizeTeaser({ c }) {
-  const [name, setName] = useState("Your Name");
+// ---------- coming soon teaser ------------------------------------------------
+function UpcomingProduct({ c }) {
+  if (!c.upcomingEnabled) return null;
+
   return (
-    <section id="customize" className="relative bg-black text-white">
-      <div className="container-editorial grid grid-cols-12 items-center gap-10 py-24 md:py-32">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="col-span-12 md:col-span-6"
-        >
+    <section className="bg-black text-white">
+      <div className="container-editorial grid grid-cols-12 gap-14 items-center py-28">
+        <div className="col-span-12 lg:col-span-5">
           <div className="eyebrow flex items-center gap-3">
             <span className="hairline" />
-            Make It Yours
+            {c.upcomingEyebrow}
           </div>
-          <h2 className="mt-5 font-serif text-4xl leading-[1.05] tracking-tight md:text-5xl lg:text-[56px]">
-            {c.customizeHeading}
+
+          <h2 className="mt-6 font-serif text-5xl leading-tight">
+            {c.upcomingHeading}
           </h2>
-          <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/70">
-            {c.customizeSubtitle}
-          </p>
-          <div className="mt-8 max-w-sm">
-            <label
-              htmlFor="engrave"
-              className="text-xs uppercase tracking-[0.2em] text-white/50"
-            >
-              Preview Engraving
-            </label>
-            <input
-              id="engrave"
-              value={name}
-              maxLength={16}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-2 w-full rounded-sm border border-white/15 bg-white/[0.04] px-4 py-3 text-white placeholder:text-white/40 focus:border-[#C9A227] focus:outline-none focus:ring-2 focus:ring-[#C9A227]/20"
-              placeholder="Your Name"
-            />
-          </div>
-          <div className="mt-8">
-            <Link href="/customize" className="btn-gold">
-              Start Customizing <ArrowRight className="h-4 w-4" />
+
+          <p className="mt-6 text-white/70 leading-8">{c.upcomingSubtitle}</p>
+
+          <div className="mt-10">
+            <Link href={c.upcomingButtonLink} className="btn-gold">
+              {c.upcomingButtonText}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-          className="col-span-12 md:col-span-6"
-        >
-          <div className="relative aspect-[5/4] overflow-hidden rounded-sm ring-1 ring-white/10">
+        </div>
+
+        <div className="col-span-12 lg:col-span-7">
+          <div className="overflow-hidden rounded-sm">
+            <Image
+              src={c.upcomingImage}
+              alt={c.upcomingHeading}
+              width={1200}
+              height={900}
+              className="w-full rounded-sm object-cover"
+            />{" "}
             <img
-              src={CUSTOMIZE_IMG}
-              alt="Customize your Inclex keychain"
-              className="h-full w-full object-cover"
+              src={c.upcomingImage}
+              alt={c.upcomingHeading}
+              className="w-full object-cover rounded-sm"
             />
-            <div className="absolute inset-0 grid place-items-center">
-              <span
-                className="translate-x-[6%] translate-y-[8%] rotate-[-2deg] font-serif text-2xl italic tracking-wide text-[#C9A227]/90 md:text-3xl lg:text-4xl"
-                style={{ textShadow: "0 2px 24px rgba(0,0,0,0.4)" }}
-              >
-                {name || "Your Name"}
-              </span>
-            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -406,7 +379,7 @@ export default function App() {
       <Header variant="dark" overlay />
       <Hero c={content} />
       <Experience c={content} />
-      <CustomizeTeaser c={content} />
+      <UpcomingProduct c={content} />
       <Newsletter c={content} />
       <Footer />
     </main>
