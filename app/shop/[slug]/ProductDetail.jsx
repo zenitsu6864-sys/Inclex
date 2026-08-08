@@ -202,7 +202,7 @@ export default function ProductDetail({ product, related }) {
               <span>
                 Free shipping
                 <br />
-                <span className="text-neutral-500">Above ₹499</span>
+                <span className="text-neutral-500">Above ₹299</span>
               </span>
             </div>
             {/* <div className="flex items-start gap-2">

@@ -53,7 +53,7 @@ function Hero({ c }) {
             <span className="hairline" />
             {c.heroEyebrow}
           </div>
-         <h1 className="font-serif text-[44px] sm:text-[52px] md:text-[68px] lg:text-[78px] leading-[1.02] tracking-tight break-words">
+       <h1 className="font-sans text-[44px] sm:text-[52px] md:text-[68px] lg:text-[78px] leading-[1.02] tracking-tight break-words">
             {head ? (
               <>
                 {head}
