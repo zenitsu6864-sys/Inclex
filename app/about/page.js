@@ -7,7 +7,7 @@ import Header from "@/components/site/Header";
 import Footer from "@/components/site/Footer";
 
 const STORY_IMG =
-  "https://images.unsplash.com/photo-1676276550349-580c49631496?auto=format&fit=crop&w=2000&q=90";
+  "https://res.cloudinary.com/vj3zdaua/image/upload/v1786455284/inclex/media/inclex/media/1786455284485-gttwz12b4x9.jpg";
 
 const CRAFT_IMG =
   "/uploads/images/1786448895725-promg8cw51s.jpeg";
