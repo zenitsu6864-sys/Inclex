@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 import { MongoClient } from "mongodb";
 import { v4 as uuidv4 } from "uuid";
 import { PRODUCTS } from "@/lib/data/products";
 import { signToken, getAdminFromRequest } from "@/lib/admin/auth";
+
+export const runtime = "nodejs";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 import {
   hashPassword,
   verifyPassword,
@@ -101,7 +108,6 @@ async function saveUploadedFile(file) {
     "image/png",
     "image/webp",
     "image/jpg",
-
     "video/mp4",
     "video/webm",
     "video/quicktime",
@@ -118,38 +124,47 @@ async function saveUploadedFile(file) {
   }
 
   const bytes = await file.arrayBuffer();
-
   const buffer = Buffer.from(bytes);
 
-  const extension = file.name.split(".").pop();
+  const isVideo = file.type.startsWith("video");
+
+  const extension = file.name.includes(".")
+    ? file.name.split(".").pop()
+    : "";
 
   const filename =
     Date.now() +
     "-" +
     Math.random().toString(36).substring(2) +
-    "." +
-    extension;
+    (extension ? "." + extension : "");
 
-  const isVideo = file.type.startsWith("video");
+  const publicId = `inclex/media/${filename.replace(/\.[^/.]+$/, "")}`;
 
-  const folder = isVideo ? "public/uploads/videos" : "public/uploads/images";
+  const result = await new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "auto",
+        public_id: publicId,
+        folder: "inclex/media",
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result);
+        }
+      }
+    );
 
-  const uploadDir = path.join(process.cwd(), folder);
-
-  if (!existsSync(uploadDir)) {
-    await mkdir(uploadDir, { recursive: true });
-  }
-
-  const filepath = path.join(uploadDir, filename);
-
-  await writeFile(filepath, buffer);
+    uploadStream.end(buffer);
+  });
 
   return {
-    url: isVideo
-      ? `/uploads/videos/${filename}`
-      : `/uploads/images/${filename}`,
+    url: result.secure_url,
     kind: isVideo ? "video" : "image",
-    filename,
+    filename: result.public_id,
+    publicId: result.public_id,
+    resourceType: result.resource_type,
   };
 }
 
@@ -1263,16 +1278,17 @@ export async function POST(request) {
         const name = formData.get("name") || file?.name || "Untitled";
 
         const uploaded = await saveUploadedFile(file);
-
-        rec = {
-          id: uuidv4(),
-          url: uploaded.url,
-          filename: uploaded.filename,
-          name,
-          kind: uploaded.kind,
-          tags: [],
-          createdAt: new Date().toISOString(),
-        };
+rec = {
+  id: uuidv4(),
+  url: uploaded.url,
+  filename: uploaded.filename,
+  publicId: uploaded.publicId,
+  resourceType: uploaded.resourceType,
+  name,
+  kind: uploaded.kind,
+  tags: [],
+  createdAt: new Date().toISOString(),
+};
       } else {
         rec = {
           id: uuidv4(),
