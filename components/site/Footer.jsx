@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { Instagram, Facebook, Youtube } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const COLS = [
   {
@@ -7,7 +10,7 @@ const COLS = [
     links: [
       { label: "All Collections", href: "/shop" },
       { label: "Customize", href: "/customize" },
-     { label: "Product Information", href: "/product-information" },
+      { label: "Corporate Orders", href: "/corporate-orders" },
       { label: "Gift Cards", href: "/shop" },
     ],
   },
@@ -39,66 +42,128 @@ const COLS = [
 ];
 
 export default function Footer() {
+  const [social, setSocial] = useState({
+    instagram: "",
+    facebook: "",
+    youtube: "",
+  });
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const response = await fetch("/api/settings");
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data?.settings?.social) {
+          setSocial({
+            instagram: data.settings.social.instagram || "",
+            facebook: data.settings.social.facebook || "",
+            youtube: data.settings.social.youtube || "",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to load social links:", error);
+      }
+    }
+
+    loadSettings();
+  }, []);
+
+  const socialLinks = [
+    {
+      key: "instagram",
+      icon: Instagram,
+      label: "Instagram",
+      href: social.instagram,
+    },
+    {
+      key: "facebook",
+      icon: Facebook,
+      label: "Facebook",
+      href: social.facebook,
+    },
+    {
+      key: "youtube",
+      icon: Youtube,
+      label: "YouTube",
+      href: social.youtube,
+    },
+  ];
+
   return (
     <footer className="bg-[#0B0B0B] text-white">
-      <div className="container-editorial py-16">
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-2 lg:grid-cols-12">
-          {/* Brand */}
-          <div className="lg:col-span-4">
-            <div className="font-sans text-[20px] sm:text-[24px] font-light tracking-[0.35em] text-[#C9A227]">
-              INCLEX
-            </div>
+      <div className="container-editorial grid grid-cols-12 gap-10 py-16">
+        {/* Brand */}
+        <div className="col-span-12 md:col-span-4">
+          <div className="font-sans text-[24px] font-light tracking-[0.42em] text-[#C9A227]">
+            INCLEX
+          </div>
 
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
-              Crafted to last.
-              <br />
-              Designed to be remembered.
-            </p>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-white/60">
+            Crafted to last.
+            <br />
+            Designed to be remembered.
+          </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              {[Instagram, Facebook, Youtube].map((Icon, i) => (
+          {/* Social Media */}
+          <div className="mt-8 flex items-center gap-3">
+            {socialLinks.map(({ key, icon: Icon, label, href }) => {
+              // Don't show the icon if no link has been configured.
+              if (!href) {
+                return null;
+              }
+
+              return (
                 <a
-                  key={i}
-                  href="#"
-                  aria-label="social"
-                  className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-white/80 transition hover:border-[#C9A227] hover:text-[#C9A227]"
+                  key={key}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/15 text-white/80 transition hover:border-[#C9A227] hover:text-[#C9A227]"
                 >
                   <Icon className="h-4 w-4" />
                 </a>
-              ))}
-            </div>
+              );
+            })}
           </div>
-
-          {/* Footer Columns */}
-          {COLS.map((col) => (
-            <div
-              key={col.title}
-              className="sm:col-span-1 lg:col-span-2"
-            >
-              <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
-                {col.title}
-              </h3>
-
-              <ul className="mt-5 space-y-3">
-                {col.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="block text-sm text-white/80 break-words transition hover:text-[#C9A227]"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
+
+        {/* Footer Columns */}
+        {COLS.map((c) => (
+          <div
+            key={c.title}
+            className="col-span-6 md:col-span-2"
+          >
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/50">
+              {c.title}
+            </div>
+
+            <ul className="mt-5 space-y-3 text-sm text-white/80">
+              {c.links.map((l) => (
+                <li key={l.label}>
+                  <Link
+                    href={l.href}
+                    className="transition hover:text-[#C9A227]"
+                  >
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
 
       {/* Bottom */}
       <div className="border-t border-white/10">
-        <div className="container-editorial flex flex-col items-center gap-3 py-6 text-center text-xs text-white/50 md:flex-row md:justify-between md:text-left">
+        <div className="container-editorial flex flex-col items-center justify-between gap-3 py-6 text-xs text-white/50 md:flex-row">
           <span>
             © {new Date().getFullYear()} Inclex. All rights reserved.
           </span>

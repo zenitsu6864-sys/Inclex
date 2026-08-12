@@ -42,8 +42,7 @@ export default function CartDrawer() {
               </div>
               <p className="mt-5 font-serif text-2xl">Your bag is empty</p>
               <p className="mt-2 max-w-xs text-sm text-neutral-500">
-                Discover our premium keychains crafted for those who carry more
-                than keys.
+                Discover our product
               </p>
               <Link
                 href="/shop"
