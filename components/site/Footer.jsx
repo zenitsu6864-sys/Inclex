@@ -10,7 +10,7 @@ const COLS = [
     links: [
       { label: "All Collections", href: "/shop" },
       // { label: "Customize", href: "/customize" },
-      { label: "Corporate Orders", href: "/corporate-orders" },
+      // { label: "Corporate Orders", href: "/corporate-orders" },
       { label: "Gift Cards", href: "/shop" },
     ],
   },
