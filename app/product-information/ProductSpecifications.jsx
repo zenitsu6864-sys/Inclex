@@ -25,7 +25,7 @@ const SPECIFICATIONS = [
   {
     icon: Droplets,
     title: "Capacity",
-    value: "50 Refills",
+    value: "50 sprays",
   },
   {
     icon: ShieldCheck,
@@ -48,9 +48,9 @@ const SPECIFICATIONS = [
     value: "Premium Gift Box",
   },
   {
-    icon: BadgeCheck,
-    title: "Warranty",
-    value: "Manufacturing Warranty",
+    icon: Sparkles,
+    title: "Carry",
+    value: "Lightweight Design",
   },
 ];
 

@@ -40,7 +40,7 @@ function TopBar({ announcement, coupon }) {
 const LINKS = [
   { label: "Home", href: "/" },
   { label: "Shop", href: "/shop" },
-  { label: "Product Information", href: "/product-information" },
+  { label: "Product Info", href: "/product-information" },
   { label: "About Us", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];
@@ -165,12 +165,27 @@ font-bold text-black"
               </button>
             </div>
 
-            <nav className="flex flex-col gap-8 px-8 pt-12 font-serif text-4xl">
-              {LINKS.map((l) => (
-                <Link key={l.href} href={l.href} onClick={() => setOpen(false)}>
-                  {l.label}
-                </Link>
-              ))}
+            <nav className="flex flex-col gap-7 px-8 pt-12 font-serif text-[32px] leading-[1.15] tracking-[-0.015em]">
+              {LINKS.map((l) => {
+                const active =
+                  pathname === l.href ||
+                  (l.href !== "/" && pathname?.startsWith(l.href));
+
+                return (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    className={`w-fit transition-colors duration-200 ${
+                      active
+                        ? "text-[#C9A227]"
+                        : "text-white hover:text-[#C9A227]"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                );
+              })}
             </nav>
           </div>,
           document.body,

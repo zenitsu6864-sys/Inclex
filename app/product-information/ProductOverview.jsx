@@ -82,7 +82,7 @@ export default function ProductOverview() {
 
             {/* Specs */}
             <div className="mt-10 space-y-4 border-t pt-8">
-              <Spec title="Capacity" value=" 50 refills" />
+              <Spec title="Capacity" value=" 50 sprays" />
               <Spec title="Weight" value="30 g" />
               <Spec title="Compatibility" value="Liquid Based Perfumes" />
             </div>
