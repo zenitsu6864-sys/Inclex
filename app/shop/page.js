@@ -122,7 +122,7 @@ export default function ShopPage() {
     <main className="min-h-screen bg-[#F8F7F4]">
       <Header variant="light" />
 
-      {/* Hero Banner */}
+      {/* Hero banner */}
       <section className="relative overflow-hidden bg-black text-white">
         <img
           src={SHOP_HERO}
@@ -132,8 +132,8 @@ export default function ShopPage() {
 
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-black/10" />
 
-        {/* Reduced hero height by approximately 20% */}
-        <div className="container-editorial relative z-10 py-16 md:py-[4.8rem]">
+        {/* Hero height reduced by approximately 30% */}
+        <div className="container-editorial relative z-10 py-14 md:py-[67px]">
           <h1 className="font-serif text-5xl leading-tight md:text-6xl">
             Shop
           </h1>
@@ -158,17 +158,19 @@ export default function ShopPage() {
       </section>
 
       {/* Shop Content */}
-      <section className="container-editorial py-10 md:py-14">
+      <section className="container-editorial py-10 md:py-12">
         <div className="grid grid-cols-12">
+
+          {/* Filters + Products */}
           <div className="col-span-12">
 
             {/* Top Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-5">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
 
               {/* Filters Button */}
               <button
                 onClick={() =>
-                  setFiltersOpen((prev) => !prev)
+                  setFiltersOpen((v) => !v)
                 }
                 className={`inline-flex items-center gap-2 rounded-sm border px-5 py-2.5 text-sm font-medium uppercase tracking-[0.12em] transition ${
                   filtersOpen
@@ -180,14 +182,15 @@ export default function ShopPage() {
 
                 <span>Filters</span>
 
-                <span className="ml-1 text-base">
+                <span className="ml-1 text-lg leading-none">
                   {filtersOpen ? "−" : "+"}
                 </span>
               </button>
 
-              {/* Product Count + Sort */}
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="text-sm text-neutral-600">
+              {/* Product Count + Sort + View */}
+              <div className="flex flex-wrap items-center gap-3">
+
+                <span className="mr-2 text-sm text-neutral-600">
                   Showing{" "}
                   <b className="text-black">
                     {filtered.length}
@@ -265,9 +268,10 @@ export default function ShopPage() {
                 transition={{
                   duration: 0.25,
                 }}
-                className="mt-5 overflow-hidden rounded-sm border border-black/10 bg-white"
+                className="mt-6 overflow-hidden rounded-sm border border-black/10 bg-white"
               >
-                <div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
+                {/* Filter Header */}
+                <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
                   <span className="font-serif text-lg">
                     Filter Products
                   </span>
@@ -280,7 +284,8 @@ export default function ShopPage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
+                {/* Filter Sections */}
+                <div className="grid grid-cols-1 gap-x-8 px-5 md:grid-cols-2">
 
                   {/* Price */}
                   <FilterSection title="Price">
@@ -328,11 +333,12 @@ export default function ShopPage() {
 
                   {/* Color */}
                   <FilterSection title="Color">
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-3 pb-5">
                       {COLORS.map((c) => (
                         <button
                           key={c.name}
                           title={c.name}
+                          aria-label={c.name}
                           onClick={() =>
                             setColorSel((s) => ({
                               ...s,
@@ -397,27 +403,25 @@ export default function ShopPage() {
                     }`}
                   >
                     <img
-                      src={p.images?.[0]}
+                      src={p.images[0]}
                       alt={p.name}
                       className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
                     />
 
                     {/* Badges */}
                     <div className="absolute left-3 top-3 flex flex-wrap gap-1">
-                      {p.badges?.map(
-                        (b, i) => (
-                          <span
-                            key={b}
-                            className={`rounded-sm px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
-                              i === 0
-                                ? "bg-black text-white"
-                                : "bg-[#C9A227] text-black"
-                            }`}
-                          >
-                            {b}
-                          </span>
-                        )
-                      )}
+                      {p.badges?.map((b, i) => (
+                        <span
+                          key={b}
+                          className={`rounded-sm px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                            i === 0
+                              ? "bg-black text-white"
+                              : "bg-[#C9A227] text-black"
+                          }`}
+                        >
+                          {b}
+                        </span>
+                      ))}
                     </div>
 
                     {/* Wishlist */}
@@ -434,6 +438,7 @@ export default function ShopPage() {
 
                   {/* Product Info */}
                   <div className="flex-1 p-5">
+
                     <Link
                       href={`/shop/${p.slug}`}
                     >
@@ -470,6 +475,7 @@ export default function ShopPage() {
                       )}
                     </div>
 
+                    {/* Features */}
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
                       {p.features
                         ?.slice(0, 3)
@@ -551,7 +557,8 @@ export default function ShopPage() {
                   </h2>
 
                   <p className="mt-5 max-w-md text-white/70">
-                    Two Vibes. One Luxury. Already prefilled. Ready when you are.
+                    Two Vibes. One Luxury. Already prefilled. Ready when you
+                    are.
                   </p>
 
                   <div className="mt-8">
@@ -583,14 +590,17 @@ export default function ShopPage() {
   );
 }
 
-/* Filter Section */
+/* ---------------------------------------
+   Filter Section
+--------------------------------------- */
+
 function FilterSection({ title, children }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-black/10 px-6 py-5 md:border-b-0 md:border-r">
+    <div className="border-b border-black/10 py-5">
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between"
       >
         <span className="text-xs font-semibold uppercase tracking-[0.18em]">
