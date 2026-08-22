@@ -24,10 +24,12 @@ import {
   razorpayEnabled,
   verifyRazorpaySignature,
 } from "@/lib/payments/razorpay";
+
 import {
   sendOrderEmail,
   sendOrderStatusEmail,
   sendResetEmail,
+  sendInquiryReplyEmail,
   makeResetToken,
   emailEnabled,
 } from "@/lib/email/resend";
@@ -502,47 +504,41 @@ export async function GET(request) {
         return json({ products: list });
       }
 
-if (parts[1] === "orders") {
-  // ----------------------------------------------------------
-  // GET /api/admin/orders/:id/notifications
-  // ----------------------------------------------------------
-  if (parts[2] && parts[3] === "notifications") {
-    const orderId = parts[2];
+      if (parts[1] === "orders") {
+        // ----------------------------------------------------------
+        // GET /api/admin/orders/:id/notifications
+        // ----------------------------------------------------------
+        if (parts[2] && parts[3] === "notifications") {
+          const orderId = parts[2];
 
-    if (!db) {
-      return json(
-        { error: "Database unavailable" },
-        500,
-      );
-    }
+          if (!db) {
+            return json({ error: "Database unavailable" }, 500);
+          }
 
-    const notifications = await db
-      .collection("email_notifications")
-      .find(
-        { orderId },
-        { projection: { _id: 0 } },
-      )
-      .sort({ createdAt: -1 })
-      .toArray();
+          const notifications = await db
+            .collection("email_notifications")
+            .find({ orderId }, { projection: { _id: 0 } })
+            .sort({ createdAt: -1 })
+            .toArray();
 
-    return json({
-      notifications,
-    });
-  }
+          return json({
+            notifications,
+          });
+        }
 
-  // ----------------------------------------------------------
-  // GET /api/admin/orders
-  // ----------------------------------------------------------
-  const list = db
-    ? await db
-        .collection("orders")
-        .find({}, { projection: { _id: 0 } })
-        .sort({ createdAt: -1 })
-        .toArray()
-    : [];
+        // ----------------------------------------------------------
+        // GET /api/admin/orders
+        // ----------------------------------------------------------
+        const list = db
+          ? await db
+              .collection("orders")
+              .find({}, { projection: { _id: 0 } })
+              .sort({ createdAt: -1 })
+              .toArray()
+          : [];
 
-  return json({ orders: list });
-}
+        return json({ orders: list });
+      }
 
       if (parts[1] === "customers") {
         const orders = db
@@ -1133,6 +1129,153 @@ export async function POST(request) {
       return res;
     }
 
+    // ========================================================================
+// ADMIN INQUIRY REPLY
+// POST /api/admin/inquiries/:id/reply
+// ========================================================================
+if (
+  parts[0] === "admin" &&
+  parts[1] === "inquiries" &&
+  parts[2] &&
+  parts[3] === "reply"
+) {
+  const admin = getAdminFromRequest(request);
+
+  if (!admin) {
+    return json({ error: "Unauthorized" }, 401);
+  }
+
+  const db = await getDb();
+
+  if (!db) {
+    return json(
+      { error: "Database unavailable" },
+      500,
+    );
+  }
+
+  const inquiryId = parts[2];
+
+  const reply = String(body.reply || "").trim();
+
+  if (!reply) {
+    return json(
+      { error: "Reply message is required" },
+      400,
+    );
+  }
+
+  if (reply.length > 5000) {
+    return json(
+      { error: "Reply is too long" },
+      400,
+    );
+  }
+
+  // Find inquiry
+  const inquiry = await db
+    .collection("contact")
+    .findOne(
+      { id: inquiryId },
+      { projection: { _id: 0 } },
+    );
+
+  if (!inquiry) {
+    return json(
+      { error: "Inquiry not found" },
+      404,
+    );
+  }
+
+  if (!inquiry.email) {
+    return json(
+      { error: "Customer email is missing" },
+      400,
+    );
+  }
+
+  const now = new Date().toISOString();
+
+  // Send email first
+  let emailResult;
+
+  try {
+    emailResult = await sendInquiryReplyEmail({
+      to: inquiry.email,
+      customerName: inquiry.name,
+      subject: inquiry.subject,
+      originalMessage: inquiry.message,
+      reply,
+    });
+  } catch (error) {
+    console.error(
+      "❌ Inquiry reply email failed:",
+      error,
+    );
+
+    return json(
+      {
+        error:
+          error.message ||
+          "Failed to send reply email",
+      },
+      500,
+    );
+  }
+
+  // Do not save as replied if email failed
+  if (!emailResult?.ok) {
+    return json(
+      {
+        error:
+          emailResult?.error ||
+          emailResult?.reason ||
+          "Could not send email",
+        email: emailResult,
+      },
+      500,
+    );
+  }
+
+  const replyRecord = {
+    id: uuidv4(),
+    sender: "admin",
+    message: reply,
+    emailId: emailResult.id || null,
+    createdAt: now,
+  };
+
+  // Save reply + update status
+  await db.collection("contact").updateOne(
+    { id: inquiryId },
+    {
+      $push: {
+        replies: replyRecord,
+      },
+      $set: {
+        status: "replied",
+        updatedAt: now,
+      },
+    },
+  );
+
+  await log(db, "inquiry.reply", {
+    inquiryId,
+    customerEmail: inquiry.email,
+    emailId: emailResult.id || null,
+  });
+
+  return json({
+    ok: true,
+    message: "Reply sent successfully",
+    reply: replyRecord,
+    email: {
+      sent: true,
+      id: emailResult.id || null,
+    },
+  });
+}
+
     const admin = getAdminFromRequest(request);
     if (parts[0] === "admin" && !admin)
       return json({ error: "Unauthorized" }, 401);
@@ -1235,317 +1378,304 @@ export async function POST(request) {
       return json({ ok: true, coupon: record });
     }
 
-if (
-  parts[0] === "admin" &&
-  parts[1] === "orders" &&
-  parts[2] &&
-  parts[3] === "status"
-) {
-  const orderId = parts[2];
+    if (
+      parts[0] === "admin" &&
+      parts[1] === "orders" &&
+      parts[2] &&
+      parts[3] === "status"
+    ) {
+      const orderId = parts[2];
 
-  const allowedStatuses = [
-    "placed",
-    "confirmed",
-    "packed",
-    "shipped",
-    "delivered",
-    "cancelled",
-    "returned",
-    "refunded",
-  ];
+      const allowedStatuses = [
+        "placed",
+        "confirmed",
+        "packed",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "returned",
+        "refunded",
+      ];
 
-  const status = String(body.status || "").trim().toLowerCase();
+      const status = String(body.status || "")
+        .trim()
+        .toLowerCase();
 
-  if (!status) {
-    return json({ error: "Status required" }, 400);
-  }
+      if (!status) {
+        return json({ error: "Status required" }, 400);
+      }
 
-  if (!allowedStatuses.includes(status)) {
-    return json(
-      {
-        error: "Invalid order status",
-        allowedStatuses,
-      },
-      400,
-    );
-  }
+      if (!allowedStatuses.includes(status)) {
+        return json(
+          {
+            error: "Invalid order status",
+            allowedStatuses,
+          },
+          400,
+        );
+      }
 
-  if (!db) {
-    return json({ error: "Database unavailable" }, 500);
-  }
+      if (!db) {
+        return json({ error: "Database unavailable" }, 500);
+      }
 
-  // ------------------------------------------------------------
-  // 1. Get the existing order BEFORE changing its status
-  // ------------------------------------------------------------
-  const existingOrder = await db.collection("orders").findOne(
-    { id: orderId },
-    { projection: { _id: 0 } },
-  );
+      // ------------------------------------------------------------
+      // 1. Get the existing order BEFORE changing its status
+      // ------------------------------------------------------------
+      const existingOrder = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
 
-  if (!existingOrder) {
-    return json({ error: "Order not found" }, 404);
-  }
+      if (!existingOrder) {
+        return json({ error: "Order not found" }, 404);
+      }
 
-  const oldStatus = existingOrder.status || "placed";
+      const oldStatus = existingOrder.status || "placed";
 
-  // ------------------------------------------------------------
-  // 2. Prevent unnecessary duplicate status updates
-  // ------------------------------------------------------------
-  if (oldStatus === status) {
-    return json({
-      ok: true,
-      unchanged: true,
-      message: `Order is already ${status}`,
-      order: existingOrder,
-    });
-  }
+      // ------------------------------------------------------------
+      // 2. Prevent unnecessary duplicate status updates
+      // ------------------------------------------------------------
+      if (oldStatus === status) {
+        return json({
+          ok: true,
+          unchanged: true,
+          message: `Order is already ${status}`,
+          order: existingOrder,
+        });
+      }
 
-  // ------------------------------------------------------------
-  // 3. Build the update
-  // ------------------------------------------------------------
-  const now = new Date().toISOString();
+      // ------------------------------------------------------------
+      // 3. Build the update
+      // ------------------------------------------------------------
+      const now = new Date().toISOString();
 
-  const update = {
-    status,
-    updatedAt: now,
-  };
+      const update = {
+        status,
+        updatedAt: now,
+      };
 
-  // ------------------------------------------------------------
-  // 4. Handle shipping information
-  // ------------------------------------------------------------
-  if (status === "shipped") {
-    const courier = String(body.courier || "").trim();
-    const trackingNumber = String(
-      body.trackingNumber || "",
-    ).trim();
-    const trackingUrl = String(
-      body.trackingUrl || "",
-    ).trim();
+      // ------------------------------------------------------------
+      // 4. Handle shipping information
+      // ------------------------------------------------------------
+      if (status === "shipped") {
+        const courier = String(body.courier || "").trim();
+        const trackingNumber = String(body.trackingNumber || "").trim();
+        const trackingUrl = String(body.trackingUrl || "").trim();
 
-    if (!courier) {
-      return json(
+        if (!courier) {
+          return json(
+            {
+              error: "Courier is required when shipping an order",
+            },
+            400,
+          );
+        }
+
+        if (!trackingNumber) {
+          return json(
+            {
+              error: "Tracking number is required when shipping an order",
+            },
+            400,
+          );
+        }
+
+        if (!trackingUrl) {
+          return json(
+            {
+              error: "Tracking URL is required when shipping an order",
+            },
+            400,
+          );
+        }
+
+        // Basic URL validation
+        try {
+          new URL(trackingUrl);
+        } catch {
+          return json(
+            {
+              error: "Tracking URL is invalid",
+            },
+            400,
+          );
+        }
+
+        update.shipping = {
+          ...(existingOrder.shipping || {}),
+          courier,
+          trackingNumber,
+          trackingUrl,
+          shippedAt: now,
+        };
+      }
+
+      // ------------------------------------------------------------
+      // 5. Additional information for cancellation
+      // ------------------------------------------------------------
+      if (status === "cancelled") {
+        const cancellationReason = String(body.cancellationReason || "").trim();
+
+        if (cancellationReason) {
+          update.cancellationReason = cancellationReason;
+        }
+
+        update.cancelledAt = now;
+      }
+
+      if (status === "returned") {
+        const returnNote = String(body.returnNote || "").trim();
+
+        if (returnNote) {
+          update.returnNote = returnNote;
+        }
+
+        update.returnedAt = now;
+      }
+
+      // ------------------------------------------------------------
+      // 6. Additional information for refund
+      // ------------------------------------------------------------
+      if (status === "refunded") {
+        const refundAmount =
+          body.refundAmount !== undefined &&
+          body.refundAmount !== null &&
+          body.refundAmount !== ""
+            ? Number(body.refundAmount)
+            : Number(existingOrder.total || 0);
+
+        if (!Number.isFinite(refundAmount) || refundAmount < 0) {
+          return json(
+            {
+              error: "Invalid refund amount",
+            },
+            400,
+          );
+        }
+
+        update.refundAmount = refundAmount;
+
+        const refundReference = String(body.refundReference || "").trim();
+
+        if (refundReference) {
+          update.refundReference = refundReference;
+        }
+
+        update.refundedAt = now;
+      }
+
+      // ------------------------------------------------------------
+      // 7. Update MongoDB
+      // ------------------------------------------------------------
+      await db.collection("orders").updateOne(
+        { id: orderId },
         {
-          error: "Courier is required when shipping an order",
+          $set: update,
         },
-        400,
       );
-    }
 
-    if (!trackingNumber) {
-      return json(
-        {
-          error: "Tracking number is required when shipping an order",
-        },
-        400,
-      );
-    }
+      // ------------------------------------------------------------
+      // 8. Fetch the updated order
+      // ------------------------------------------------------------
+      const updatedOrder = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
 
-    if (!trackingUrl) {
-      return json(
-        {
-          error: "Tracking URL is required when shipping an order",
-        },
-        400,
-      );
-    }
+      if (!updatedOrder) {
+        return json(
+          {
+            error: "Order was updated but could not be retrieved",
+          },
+          500,
+        );
+      }
 
-    // Basic URL validation
-    try {
-      new URL(trackingUrl);
-    } catch {
-      return json(
-        {
-          error: "Tracking URL is invalid",
-        },
-        400,
-      );
-    }
-
-    update.shipping = {
-      ...(existingOrder.shipping || {}),
-      courier,
-      trackingNumber,
-      trackingUrl,
-      shippedAt: now,
-    };
-  }
-
-  // ------------------------------------------------------------
-  // 5. Additional information for cancellation
-  // ------------------------------------------------------------
-  if (status === "cancelled") {
-    const cancellationReason = String(
-      body.cancellationReason || "",
-    ).trim();
-
-    if (cancellationReason) {
-      update.cancellationReason = cancellationReason;
-    }
-
-    update.cancelledAt = now;
-  }
-
-  if (status === "returned") {
-  const returnNote = String(
-    body.returnNote || "",
-  ).trim();
-
-  if (returnNote) {
-    update.returnNote = returnNote;
-  }
-
-  update.returnedAt = now;
-}
-
-  // ------------------------------------------------------------
-  // 6. Additional information for refund
-  // ------------------------------------------------------------
-  if (status === "refunded") {
-    const refundAmount =
-      body.refundAmount !== undefined &&
-      body.refundAmount !== null &&
-      body.refundAmount !== ""
-        ? Number(body.refundAmount)
-        : Number(existingOrder.total || 0);
-
-    if (!Number.isFinite(refundAmount) || refundAmount < 0) {
-      return json(
-        {
-          error: "Invalid refund amount",
-        },
-        400,
-      );
-    }
-
-    update.refundAmount = refundAmount;
-
-    const refundReference = String(
-      body.refundReference || "",
-    ).trim();
-
-    if (refundReference) {
-      update.refundReference = refundReference;
-    }
-
-    update.refundedAt = now;
-  }
-
-  // ------------------------------------------------------------
-  // 7. Update MongoDB
-  // ------------------------------------------------------------
-  await db.collection("orders").updateOne(
-    { id: orderId },
-    {
-      $set: update,
-    },
-  );
-
-  // ------------------------------------------------------------
-  // 8. Fetch the updated order
-  // ------------------------------------------------------------
-  const updatedOrder = await db.collection("orders").findOne(
-    { id: orderId },
-    { projection: { _id: 0 } },
-  );
-
-  if (!updatedOrder) {
-    return json(
-      {
-        error: "Order was updated but could not be retrieved",
-      },
-      500,
-    );
-  }
-
-  // ------------------------------------------------------------
-  // 9. Record status change
-  // ------------------------------------------------------------
-  await log(db, "order.status", {
-    id: orderId,
-    orderNumber: updatedOrder.orderNumber,
-    from: oldStatus,
-    to: status,
-    adminAction: true,
-  });
-
-  // ------------------------------------------------------------
-  // 10. Send status-specific customer email
-  // ------------------------------------------------------------
-  let emailResult = null;
-
-  try {
-    emailResult = await sendOrderStatusEmail(
-      updatedOrder,
-      status,
-    );
-
-    // ----------------------------------------------------------
-    // 11. Save email notification history
-    // ----------------------------------------------------------
-    await db.collection("email_notifications").insertOne({
-      id: uuidv4(),
-      orderId,
-      orderNumber: updatedOrder.orderNumber,
-      type: `order_${status}`,
-      status: emailResult?.ok
-        ? "sent"
-        : emailResult?.skipped
-          ? "skipped"
-          : "failed",
-      recipient: updatedOrder.customer?.email || null,
-      resendId: emailResult?.id || null,
-      error: emailResult?.error || null,
-      createdAt: now,
-    });
-  } catch (emailError) {
-    // Email failure must NOT undo the order update.
-    console.error(
-      `❌ Order status email failed for ${updatedOrder.orderNumber}:`,
-      emailError,
-    );
-
-    emailResult = {
-      ok: false,
-      error: emailError.message,
-    };
-
-    // Still record the failed notification.
-    try {
-      await db.collection("email_notifications").insertOne({
-        id: uuidv4(),
-        orderId,
+      // ------------------------------------------------------------
+      // 9. Record status change
+      // ------------------------------------------------------------
+      await log(db, "order.status", {
+        id: orderId,
         orderNumber: updatedOrder.orderNumber,
-        type: `order_${status}`,
-        status: "failed",
-        recipient: updatedOrder.customer?.email || null,
-        resendId: null,
-        error: emailError.message,
-        createdAt: now,
+        from: oldStatus,
+        to: status,
+        adminAction: true,
       });
-    } catch (historyError) {
-      console.error(
-        "❌ Could not save email notification history:",
-        historyError,
-      );
-    }
-  }
 
-  // ------------------------------------------------------------
-  // 12. Return the complete result
-  // ------------------------------------------------------------
-  return json({
-    ok: true,
-    changed: true,
-    oldStatus,
-    status,
-    order: updatedOrder,
-    email: {
-      sent: emailResult?.ok === true,
-      skipped: emailResult?.skipped === true,
-      error: emailResult?.error || null,
-    },
-  });
-}
+      // ------------------------------------------------------------
+      // 10. Send status-specific customer email
+      // ------------------------------------------------------------
+      let emailResult = null;
+
+      try {
+        emailResult = await sendOrderStatusEmail(updatedOrder, status);
+
+        // ----------------------------------------------------------
+        // 11. Save email notification history
+        // ----------------------------------------------------------
+        await db.collection("email_notifications").insertOne({
+          id: uuidv4(),
+          orderId,
+          orderNumber: updatedOrder.orderNumber,
+          type: `order_${status}`,
+          status: emailResult?.ok
+            ? "sent"
+            : emailResult?.skipped
+              ? "skipped"
+              : "failed",
+          recipient: updatedOrder.customer?.email || null,
+          resendId: emailResult?.id || null,
+          error: emailResult?.error || null,
+          createdAt: now,
+        });
+      } catch (emailError) {
+        // Email failure must NOT undo the order update.
+        console.error(
+          `❌ Order status email failed for ${updatedOrder.orderNumber}:`,
+          emailError,
+        );
+
+        emailResult = {
+          ok: false,
+          error: emailError.message,
+        };
+
+        // Still record the failed notification.
+        try {
+          await db.collection("email_notifications").insertOne({
+            id: uuidv4(),
+            orderId,
+            orderNumber: updatedOrder.orderNumber,
+            type: `order_${status}`,
+            status: "failed",
+            recipient: updatedOrder.customer?.email || null,
+            resendId: null,
+            error: emailError.message,
+            createdAt: now,
+          });
+        } catch (historyError) {
+          console.error(
+            "❌ Could not save email notification history:",
+            historyError,
+          );
+        }
+      }
+
+      // ------------------------------------------------------------
+      // 12. Return the complete result
+      // ------------------------------------------------------------
+      return json({
+        ok: true,
+        changed: true,
+        oldStatus,
+        status,
+        order: updatedOrder,
+        email: {
+          sent: emailResult?.ok === true,
+          skipped: emailResult?.skipped === true,
+          error: emailResult?.error || null,
+        },
+      });
+    }
 
     if (
       parts[0] === "admin" &&
