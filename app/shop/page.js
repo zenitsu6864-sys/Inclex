@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
@@ -54,7 +54,7 @@ export default function ShopPage() {
     async function loadProducts() {
       try {
         const res = await fetch("/api/products", {
-          cache: "no-store",
+          cache: "force-cache",
         });
 
         const data = await res.json();
@@ -77,9 +77,7 @@ export default function ShopPage() {
     }
 
     if (priceRange === "500_1000") {
-      list = list.filter(
-        (p) => p.price >= 500 && p.price <= 1000
-      );
+      list = list.filter((p) => p.price >= 500 && p.price <= 1000);
     }
 
     if (priceRange === "above_1000") {
@@ -87,13 +85,11 @@ export default function ShopPage() {
     }
 
     // Color Filter
-    const activeColors = Object.keys(colorSel).filter(
-      (k) => colorSel[k]
-    );
+    const activeColors = Object.keys(colorSel).filter((k) => colorSel[k]);
 
     if (activeColors.length) {
       list = list.filter((p) =>
-        p.colors?.some((c) => activeColors.includes(c))
+        p.colors?.some((c) => activeColors.includes(c)),
       );
     }
 
@@ -124,10 +120,13 @@ export default function ShopPage() {
 
       {/* Hero banner */}
       <section className="relative overflow-hidden bg-black text-white">
-        <img
+        <Image
           src={SHOP_HERO}
           alt="Shop Inclex"
-          className="absolute inset-0 h-full w-full object-cover opacity-60"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-60"
         />
 
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-black/10" />
@@ -143,15 +142,10 @@ export default function ShopPage() {
           </p>
 
           <div className="mt-4 text-xs text-white/60">
-            <Link
-              href="/"
-              className="hover:text-white"
-            >
+            <Link href="/" className="hover:text-white">
               Home
             </Link>
-
             <span className="mx-2">›</span>
-
             Shop
           </div>
         </div>
@@ -160,18 +154,13 @@ export default function ShopPage() {
       {/* Shop Content */}
       <section className="container-editorial py-10 md:py-12">
         <div className="grid grid-cols-12">
-
           {/* Filters + Products */}
           <div className="col-span-12">
-
             {/* Top Controls */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
-
               {/* Filters Button */}
               <button
-                onClick={() =>
-                  setFiltersOpen((v) => !v)
-                }
+                onClick={() => setFiltersOpen((v) => !v)}
                 className={`inline-flex items-center gap-2 rounded-sm border px-5 py-2.5 text-sm font-medium uppercase tracking-[0.12em] transition ${
                   filtersOpen
                     ? "border-black bg-black text-white"
@@ -189,12 +178,8 @@ export default function ShopPage() {
 
               {/* Product Count + Sort + View */}
               <div className="flex flex-wrap items-center gap-3">
-
                 <span className="mr-2 text-sm text-neutral-600">
-                  Showing{" "}
-                  <b className="text-black">
-                    {filtered.length}
-                  </b>{" "}
+                  Showing <b className="text-black">{filtered.length}</b>{" "}
                   product
                   {filtered.length === 1 ? "" : "s"}
                 </span>
@@ -203,16 +188,11 @@ export default function ShopPage() {
                 <div className="relative">
                   <select
                     value={sort}
-                    onChange={(e) =>
-                      setSort(e.target.value)
-                    }
+                    onChange={(e) => setSort(e.target.value)}
                     className="appearance-none rounded-sm border border-black/10 bg-white px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A227]/25"
                   >
                     {SORTS.map((s) => (
-                      <option
-                        key={s.id}
-                        value={s.id}
-                      >
+                      <option key={s.id} value={s.id}>
                         Sort by: {s.label}
                       </option>
                     ))}
@@ -227,9 +207,7 @@ export default function ShopPage() {
                     onClick={() => setView("grid")}
                     aria-label="Grid view"
                     className={`px-3 py-2 ${
-                      view === "grid"
-                        ? "bg-black text-white"
-                        : ""
+                      view === "grid" ? "bg-black text-white" : ""
                     }`}
                   >
                     <Grid className="h-4 w-4" />
@@ -239,9 +217,7 @@ export default function ShopPage() {
                     onClick={() => setView("list")}
                     aria-label="List view"
                     className={`px-3 py-2 ${
-                      view === "list"
-                        ? "bg-black text-white"
-                        : ""
+                      view === "list" ? "bg-black text-white" : ""
                     }`}
                   >
                     <List className="h-4 w-4" />
@@ -272,9 +248,7 @@ export default function ShopPage() {
               >
                 {/* Filter Header */}
                 <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
-                  <span className="font-serif text-lg">
-                    Filter Products
-                  </span>
+                  <span className="font-serif text-lg">Filter Products</span>
 
                   <button
                     onClick={clearAll}
@@ -286,7 +260,6 @@ export default function ShopPage() {
 
                 {/* Filter Sections */}
                 <div className="grid grid-cols-1 gap-x-8 px-5 md:grid-cols-2">
-
                   {/* Price */}
                   <FilterSection title="Price">
                     <ul className="space-y-2 text-sm">
@@ -313,18 +286,12 @@ export default function ShopPage() {
                             <input
                               type="radio"
                               name="price"
-                              checked={
-                                priceRange === o.id
-                              }
-                              onChange={() =>
-                                setPriceRange(o.id)
-                              }
+                              checked={priceRange === o.id}
+                              onChange={() => setPriceRange(o.id)}
                               className="h-4 w-4 border-black/20 accent-[#C9A227]"
                             />
 
-                            <span>
-                              {o.label}
-                            </span>
+                            <span>{o.label}</span>
                           </label>
                         </li>
                       ))}
@@ -342,8 +309,7 @@ export default function ShopPage() {
                           onClick={() =>
                             setColorSel((s) => ({
                               ...s,
-                              [c.name]:
-                                !s[c.name],
+                              [c.name]: !s[c.name],
                             }))
                           }
                           className={`h-8 w-8 rounded-full border transition ${
@@ -388,24 +354,26 @@ export default function ShopPage() {
                     duration: 0.6,
                   }}
                   className={`group overflow-hidden rounded-sm border border-black/[0.06] bg-white transition hover:shadow-[0_20px_60px_-30px_rgba(0,0,0,0.25)] ${
-                    view === "list"
-                      ? "flex"
-                      : ""
+                    view === "list" ? "flex" : ""
                   }`}
                 >
                   {/* Product Image */}
                   <Link
                     href={`/shop/${p.slug}`}
                     className={`relative block overflow-hidden bg-[#EFEDE7] ${
-                      view === "list"
-                        ? "w-72 shrink-0"
-                        : "aspect-[4/5]"
+                      view === "list" ? "w-72 shrink-0" : "aspect-[4/5]"
                     }`}
                   >
-                    <img
+                    <Image
                       src={p.images[0]}
                       alt={p.name}
-                      className="h-full w-full object-cover transition-transform duration-[1200ms] group-hover:scale-105"
+                      fill
+                      sizes={
+                        view === "list"
+                          ? "288px"
+                          : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      }
+                      className="object-cover transition-transform duration-[1200ms] group-hover:scale-105"
                     />
 
                     {/* Badges */}
@@ -438,10 +406,7 @@ export default function ShopPage() {
 
                   {/* Product Info */}
                   <div className="flex-1 p-5">
-
-                    <Link
-                      href={`/shop/${p.slug}`}
-                    >
+                    <Link href={`/shop/${p.slug}`}>
                       <h3 className="font-serif text-xl leading-tight">
                         {p.name}
                       </h3>
@@ -452,21 +417,15 @@ export default function ShopPage() {
                     </div>
 
                     <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500">
-                      <span className="text-[#C9A227]">
-                        ★★★★☆
-                      </span>
+                      <span className="text-[#C9A227]">★★★★☆</span>
 
                       {p.rating}
 
-                      <span className="text-neutral-400">
-                        ({p.reviews})
-                      </span>
+                      <span className="text-neutral-400">({p.reviews})</span>
                     </div>
 
                     <div className="mt-2 flex items-baseline gap-2">
-                      <div className="font-serif text-xl">
-                        ₹{fmt(p.price)}
-                      </div>
+                      <div className="font-serif text-xl">₹{fmt(p.price)}</div>
 
                       {p.compareAt && (
                         <div className="text-xs text-neutral-400 line-through">
@@ -477,24 +436,22 @@ export default function ShopPage() {
 
                     {/* Features */}
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-600">
-                      {p.features
-                        ?.slice(0, 3)
-                        .map((f, i) => (
-                          <span
-                            key={f}
-                            className="inline-flex items-center gap-1"
-                          >
-                            {i === 0 ? (
-                              <Diamond className="h-3 w-3 text-[#C9A227]" />
-                            ) : i === 1 ? (
-                              <ShieldCheck className="h-3 w-3 text-[#C9A227]" />
-                            ) : (
-                              <Sparkles className="h-3 w-3 text-[#C9A227]" />
-                            )}
+                      {p.features?.slice(0, 3).map((f, i) => (
+                        <span
+                          key={f}
+                          className="inline-flex items-center gap-1"
+                        >
+                          {i === 0 ? (
+                            <Diamond className="h-3 w-3 text-[#C9A227]" />
+                          ) : i === 1 ? (
+                            <ShieldCheck className="h-3 w-3 text-[#C9A227]" />
+                          ) : (
+                            <Sparkles className="h-3 w-3 text-[#C9A227]" />
+                          )}
 
-                            {f}
-                          </span>
-                        ))}
+                          {f}
+                        </span>
+                      ))}
                     </div>
 
                     {/* Buttons */}
@@ -529,10 +486,7 @@ export default function ShopPage() {
                   Try clearing filters or exploring a different category.
                 </p>
 
-                <button
-                  onClick={clearAll}
-                  className="btn-dark mt-6"
-                >
+                <button onClick={clearAll} className="btn-dark mt-6">
                   Clear All Filters
                 </button>
               </div>
@@ -541,7 +495,6 @@ export default function ShopPage() {
             {/* Upcoming Product */}
             <section className="mt-16 overflow-hidden rounded-sm bg-black text-white">
               <div className="grid grid-cols-1 items-center lg:grid-cols-2">
-
                 {/* Left */}
                 <div className="px-8 py-10 md:px-14 md:py-16">
                   <div className="flex items-center gap-3">
@@ -572,11 +525,13 @@ export default function ShopPage() {
                 </div>
 
                 {/* Right */}
-                <div className="h-full">
-                  <img
+                <div className="relative h-full min-h-[400px]">
+                  <Image
                     src="/uploads/images/1786063669904-civ60p69a1r.jpeg"
                     alt="INCLEX Pocket Perfume"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                    className="object-cover"
                   />
                 </div>
               </div>
@@ -607,16 +562,10 @@ function FilterSection({ title, children }) {
           {title}
         </span>
 
-        <span className="text-lg text-neutral-500">
-          {open ? "−" : "+"}
-        </span>
+        <span className="text-lg text-neutral-500">{open ? "−" : "+"}</span>
       </button>
 
-      {open && (
-        <div className="mt-4">
-          {children}
-        </div>
-      )}
+      {open && <div className="mt-4">{children}</div>}
     </div>
   );
 }

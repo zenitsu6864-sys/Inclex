@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useCart } from "./CartContext";
 import UserMenu from "./UserMenu";
-import { DEFAULT_HOMEPAGE, fetchHomepage } from "@/lib/data/content";
+import { DEFAULT_HOMEPAGE } from "@/lib/data/content";
 
 function TopBar({ announcement, coupon }) {
   return (
@@ -66,10 +66,16 @@ export default function Header({ variant = "light", overlay = false }) {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
+
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    fetchHomepage().then(setCms);
-    return () => window.removeEventListener("scroll", onScroll);
+
+    window.addEventListener("scroll", onScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   const isDark = variant === "dark" && !scrolled;

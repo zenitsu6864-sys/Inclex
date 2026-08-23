@@ -283,36 +283,56 @@ export async function GET(request) {
       return json({ product: p });
     }
 
-    if (parts[0] === "products") {
-      const db = await getDb();
-      let list = [];
-      if (db) {
-        await ensureSeed(db);
-        list = await db
-          .collection("products")
-          .find({ status: { $ne: "archived" } }, { projection: { _id: 0 } })
-          .toArray();
-      }
+if (parts[0] === "products") {
+  const db = await getDb();
+  let list = [];
 
-      const q = (url.searchParams.get("q") || "").toLowerCase();
-      const category = url.searchParams.get("category");
-      if (q)
-        list = list.filter((p) =>
-          (p.name + " " + p.subtitle).toLowerCase().includes(q),
-        );
-      if (category && category !== "All Products") {
-        list = list.filter((p) =>
-          category === "Personalized"
-            ? p.features?.some((f) => /personal/i.test(f))
-            : p.material === category,
-        );
-      }
-      // Only show 'published' products publicly
-      const published = list.filter(
-        (p) => (p.status || "published") === "published",
-      );
-      return json({ products: published });
-    }
+  if (db) {
+    await ensureSeed(db);
+
+    list = await db
+      .collection("products")
+      .find(
+        {
+          status: "published",
+        },
+        {
+          projection: {
+            _id: 0,
+          },
+        },
+      )
+      .toArray();
+  }
+
+  const q = (url.searchParams.get("q") || "").toLowerCase();
+  const category = url.searchParams.get("category");
+
+  if (q) {
+    list = list.filter((p) =>
+      `${p.name || ""} ${p.subtitle || ""}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }
+
+  if (category && category !== "All Products") {
+    list = list.filter((p) =>
+      category === "Personalized"
+        ? p.features?.some((f) => /personal/i.test(f))
+        : p.material === category,
+    );
+  }
+
+  return json(
+    { products: list },
+    200,
+    {
+      "Cache-Control":
+        "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  );
+}
 
     if (parts[0] === "faqs") {
       return json({
