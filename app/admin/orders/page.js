@@ -7,6 +7,7 @@ import AdminShell from "@/components/admin/AdminShell";
 
 const fmt = (n) => new Intl.NumberFormat("en-IN").format(n || 0);
 const STATUSES = [
+  "payment_pending",
   "placed",
   "confirmed",
   "packed",

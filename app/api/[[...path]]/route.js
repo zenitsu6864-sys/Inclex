@@ -964,50 +964,342 @@ export async function POST(request) {
       if (db) await db.collection("corporate_inquiries").insertOne(record);
       return json({ ok: true, id: record.id });
     }
+
+    if (parts[0] === "checkout" && parts[1] === "cancel") {
+      const db = await getDb();
+
+      if (!db) {
+        return json(
+          {
+            ok: false,
+            error: "Database unavailable",
+          },
+          500,
+        );
+      }
+
+      const { orderId } = body || {};
+
+      if (!orderId) {
+        return json(
+          {
+            ok: false,
+            error: "Order ID is required",
+          },
+          400,
+        );
+      }
+
+      const existingOrder = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
+
+      if (!existingOrder) {
+        return json(
+          {
+            ok: false,
+            error: "Order not found",
+          },
+          404,
+        );
+      }
+
+      // Never cancel an order that has already been paid.
+      if (existingOrder.paymentStatus === "paid") {
+        return json({
+          ok: true,
+          alreadyPaid: true,
+          order: existingOrder,
+        });
+      }
+
+      // Only Razorpay pending orders can reach this endpoint.
+      if (existingOrder.payment !== "razorpay") {
+        return json(
+          {
+            ok: false,
+            error: "This is not a Razorpay order",
+          },
+          400,
+        );
+      }
+
+      await db.collection("orders").updateOne(
+        {
+          id: orderId,
+          paymentStatus: {
+            $ne: "paid",
+          },
+        },
+        {
+          $set: {
+            status: "cancelled",
+            paymentStatus: "cancelled",
+            cancelledAt: new Date().toISOString(),
+            cancellationReason: "Razorpay checkout cancelled",
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      );
+
+      await log(db, "payment.cancelled", {
+        orderId,
+        orderNumber: existingOrder.orderNumber,
+      });
+
+      const updatedOrder = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
+
+      return json({
+        ok: true,
+        order: updatedOrder,
+      });
+    }
+
     if (parts[0] === "checkout" && parts[1] === "verify") {
       const db = await getDb();
+
+      if (!db) {
+        return json(
+          {
+            ok: false,
+            error: "Database unavailable",
+          },
+          500,
+        );
+      }
+
       const {
         orderId,
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
       } = body || {};
+
       if (
-        !verifyRazorpaySignature({
-          razorpay_order_id,
-          razorpay_payment_id,
-          razorpay_signature,
-        })
+        !orderId ||
+        !razorpay_order_id ||
+        !razorpay_payment_id ||
+        !razorpay_signature
       ) {
-        return json({ ok: false, error: "Invalid payment signature" }, 400);
-      }
-      let updated = null;
-      if (db) {
-        await db.collection("orders").updateOne(
-          { id: orderId },
+        return json(
           {
-            $set: {
-              paymentStatus: "paid",
-              status: "confirmed",
-              razorpayPaymentId: razorpay_payment_id,
-              razorpaySignature: razorpay_signature,
-              paidAt: new Date().toISOString(),
-            },
+            ok: false,
+            error: "Incomplete payment details",
           },
+          400,
         );
-        updated = await db
+      }
+
+      // ------------------------------------------------------------
+      // 1. Find the INCLEX order
+      // ------------------------------------------------------------
+      const existingOrder = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
+
+      if (!existingOrder) {
+        return json(
+          {
+            ok: false,
+            error: "Order not found",
+          },
+          404,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 2. Make sure this is a Razorpay order
+      // ------------------------------------------------------------
+      if (existingOrder.payment !== "razorpay") {
+        return json(
+          {
+            ok: false,
+            error: "This order does not use Razorpay",
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 3. Make sure Razorpay order belongs to this INCLEX order
+      // ------------------------------------------------------------
+      if (
+        !existingOrder.razorpayOrderId ||
+        existingOrder.razorpayOrderId !== razorpay_order_id
+      ) {
+        return json(
+          {
+            ok: false,
+            error: "Razorpay order mismatch",
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 4. Verify Razorpay signature
+      // ------------------------------------------------------------
+      const validSignature = verifyRazorpaySignature({
+        razorpay_order_id: existingOrder.razorpayOrderId,
+        razorpay_payment_id,
+        razorpay_signature,
+      });
+
+      if (!validSignature) {
+        return json(
+          {
+            ok: false,
+            error: "Invalid payment signature",
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 5. Fetch payment directly from Razorpay
+      // ------------------------------------------------------------
+      const rzp = getRazorpay();
+
+      if (!rzp) {
+        return json(
+          {
+            ok: false,
+            error: "Razorpay is not configured",
+          },
+          500,
+        );
+      }
+
+      let payment;
+
+      try {
+        payment = await rzp.payments.fetch(razorpay_payment_id);
+      } catch (error) {
+        console.error("Razorpay payment fetch failed:", error);
+
+        return json(
+          {
+            ok: false,
+            error: "Could not verify payment status",
+          },
+          502,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 6. Payment must belong to the same Razorpay order
+      // ------------------------------------------------------------
+      if (payment.order_id !== existingOrder.razorpayOrderId) {
+        return json(
+          {
+            ok: false,
+            error: "Payment does not belong to this order",
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 7. Verify payment amount
+      // ------------------------------------------------------------
+      const expectedAmount = Math.round(Number(existingOrder.total || 0) * 100);
+
+      if (Number(payment.amount) !== expectedAmount) {
+        return json(
+          {
+            ok: false,
+            error: "Payment amount mismatch",
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 8. Only CAPTURED payments can confirm the order
+      // ------------------------------------------------------------
+      if (payment.status !== "captured") {
+        return json(
+          {
+            ok: false,
+            error: `Payment is not captured. Current status: ${payment.status}`,
+          },
+          400,
+        );
+      }
+
+      // ------------------------------------------------------------
+      // 9. Mark order as paid + confirmed
+      // ------------------------------------------------------------
+      const result = await db.collection("orders").updateOne(
+        {
+          id: orderId,
+          paymentStatus: {
+            $ne: "paid",
+          },
+        },
+        {
+          $set: {
+            paymentStatus: "paid",
+            status: "confirmed",
+            razorpayPaymentId: razorpay_payment_id,
+            razorpaySignature: razorpay_signature,
+            paidAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      );
+
+      // ------------------------------------------------------------
+      // 10. Prevent duplicate confirmation
+      // ------------------------------------------------------------
+      if (result.modifiedCount === 0) {
+        const currentOrder = await db
           .collection("orders")
           .findOne({ id: orderId }, { projection: { _id: 0 } });
-        await log(db, "payment.success", { orderId, razorpay_payment_id });
-        if (updated) sendOrderEmail(updated).catch(() => {});
+
+        if (currentOrder?.paymentStatus === "paid") {
+          return json({
+            ok: true,
+            order: currentOrder,
+          });
+        }
+
+        return json(
+          {
+            ok: false,
+            error: "Order could not be confirmed",
+          },
+          409,
+        );
       }
-      return json({ ok: true, order: updated });
+
+      const updated = await db
+        .collection("orders")
+        .findOne({ id: orderId }, { projection: { _id: 0 } });
+
+      await log(db, "payment.success", {
+        orderId,
+        razorpay_payment_id,
+      });
+
+      if (updated) {
+        sendOrderEmail(updated).catch(() => {});
+      }
+
+      return json({
+        ok: true,
+        order: updated,
+      });
     }
 
     if (parts[0] === "checkout") {
       const db = await getDb();
       const currentUser = getUserFromRequest(request);
       const paymentMethod = String(body.payment || "cod");
+      const isRazorpay = paymentMethod === "razorpay";
+
       const record = {
         id: uuidv4(),
         orderNumber: "INX-" + Math.floor(100000 + Math.random() * 900000),
@@ -1017,8 +1309,12 @@ export async function POST(request) {
         shipping: Number(body.shipping || 0),
         total: Number(body.total || 0),
         payment: paymentMethod,
-        status: "placed",
-        paymentStatus: paymentMethod === "cod" ? "pending_cod" : "created",
+
+        // Razorpay orders stay pending until payment is verified.
+        status: isRazorpay ? "payment_pending" : "placed",
+
+        paymentStatus: isRazorpay ? "pending" : "pending_cod",
+
         userId: currentUser?.userId || null,
         createdAt: new Date().toISOString(),
       };
@@ -1130,151 +1426,128 @@ export async function POST(request) {
     }
 
     // ========================================================================
-// ADMIN INQUIRY REPLY
-// POST /api/admin/inquiries/:id/reply
-// ========================================================================
-if (
-  parts[0] === "admin" &&
-  parts[1] === "inquiries" &&
-  parts[2] &&
-  parts[3] === "reply"
-) {
-  const admin = getAdminFromRequest(request);
+    // ADMIN INQUIRY REPLY
+    // POST /api/admin/inquiries/:id/reply
+    // ========================================================================
+    if (
+      parts[0] === "admin" &&
+      parts[1] === "inquiries" &&
+      parts[2] &&
+      parts[3] === "reply"
+    ) {
+      const admin = getAdminFromRequest(request);
 
-  if (!admin) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+      if (!admin) {
+        return json({ error: "Unauthorized" }, 401);
+      }
 
-  const db = await getDb();
+      const db = await getDb();
 
-  if (!db) {
-    return json(
-      { error: "Database unavailable" },
-      500,
-    );
-  }
+      if (!db) {
+        return json({ error: "Database unavailable" }, 500);
+      }
 
-  const inquiryId = parts[2];
+      const inquiryId = parts[2];
 
-  const reply = String(body.reply || "").trim();
+      const reply = String(body.reply || "").trim();
 
-  if (!reply) {
-    return json(
-      { error: "Reply message is required" },
-      400,
-    );
-  }
+      if (!reply) {
+        return json({ error: "Reply message is required" }, 400);
+      }
 
-  if (reply.length > 5000) {
-    return json(
-      { error: "Reply is too long" },
-      400,
-    );
-  }
+      if (reply.length > 5000) {
+        return json({ error: "Reply is too long" }, 400);
+      }
 
-  // Find inquiry
-  const inquiry = await db
-    .collection("contact")
-    .findOne(
-      { id: inquiryId },
-      { projection: { _id: 0 } },
-    );
+      // Find inquiry
+      const inquiry = await db
+        .collection("contact")
+        .findOne({ id: inquiryId }, { projection: { _id: 0 } });
 
-  if (!inquiry) {
-    return json(
-      { error: "Inquiry not found" },
-      404,
-    );
-  }
+      if (!inquiry) {
+        return json({ error: "Inquiry not found" }, 404);
+      }
 
-  if (!inquiry.email) {
-    return json(
-      { error: "Customer email is missing" },
-      400,
-    );
-  }
+      if (!inquiry.email) {
+        return json({ error: "Customer email is missing" }, 400);
+      }
 
-  const now = new Date().toISOString();
+      const now = new Date().toISOString();
 
-  // Send email first
-  let emailResult;
+      // Send email first
+      let emailResult;
 
-  try {
-    emailResult = await sendInquiryReplyEmail({
-      to: inquiry.email,
-      customerName: inquiry.name,
-      subject: inquiry.subject,
-      originalMessage: inquiry.message,
-      reply,
-    });
-  } catch (error) {
-    console.error(
-      "❌ Inquiry reply email failed:",
-      error,
-    );
+      try {
+        emailResult = await sendInquiryReplyEmail({
+          to: inquiry.email,
+          customerName: inquiry.name,
+          subject: inquiry.subject,
+          originalMessage: inquiry.message,
+          reply,
+        });
+      } catch (error) {
+        console.error("❌ Inquiry reply email failed:", error);
 
-    return json(
-      {
-        error:
-          error.message ||
-          "Failed to send reply email",
-      },
-      500,
-    );
-  }
+        return json(
+          {
+            error: error.message || "Failed to send reply email",
+          },
+          500,
+        );
+      }
 
-  // Do not save as replied if email failed
-  if (!emailResult?.ok) {
-    return json(
-      {
-        error:
-          emailResult?.error ||
-          emailResult?.reason ||
-          "Could not send email",
-        email: emailResult,
-      },
-      500,
-    );
-  }
+      // Do not save as replied if email failed
+      if (!emailResult?.ok) {
+        return json(
+          {
+            error:
+              emailResult?.error ||
+              emailResult?.reason ||
+              "Could not send email",
+            email: emailResult,
+          },
+          500,
+        );
+      }
 
-  const replyRecord = {
-    id: uuidv4(),
-    sender: "admin",
-    message: reply,
-    emailId: emailResult.id || null,
-    createdAt: now,
-  };
+      const replyRecord = {
+        id: uuidv4(),
+        sender: "admin",
+        message: reply,
+        emailId: emailResult.id || null,
+        createdAt: now,
+      };
 
-  // Save reply + update status
-  await db.collection("contact").updateOne(
-    { id: inquiryId },
-    {
-      $push: {
-        replies: replyRecord,
-      },
-      $set: {
-        status: "replied",
-        updatedAt: now,
-      },
-    },
-  );
+      // Save reply + update status
+      await db.collection("contact").updateOne(
+        { id: inquiryId },
+        {
+          $push: {
+            replies: replyRecord,
+          },
+          $set: {
+            status: "replied",
+            updatedAt: now,
+          },
+        },
+      );
 
-  await log(db, "inquiry.reply", {
-    inquiryId,
-    customerEmail: inquiry.email,
-    emailId: emailResult.id || null,
-  });
+      await log(db, "inquiry.reply", {
+        inquiryId,
+        customerEmail: inquiry.email,
+        emailId: emailResult.id || null,
+      });
 
-  return json({
-    ok: true,
-    message: "Reply sent successfully",
-    reply: replyRecord,
-    email: {
-      sent: true,
-      id: emailResult.id || null,
-    },
-  });
-}
+      return json({
+        ok: true,
+        message: "Reply sent successfully",
+        reply: replyRecord,
+        email: {
+          sent: true,
+          id: emailResult.id || null,
+        },
+      });
+    }
 
     const admin = getAdminFromRequest(request);
     if (parts[0] === "admin" && !admin)
@@ -1431,6 +1704,29 @@ if (
       }
 
       const oldStatus = existingOrder.status || "placed";
+
+      // ------------------------------------------------------------
+// Razorpay payment protection
+// ------------------------------------------------------------
+if (
+  existingOrder.payment === "razorpay" &&
+  existingOrder.paymentStatus !== "paid"
+) {
+  const allowedStatuses = [
+    "payment_pending",
+    "cancelled",
+  ];
+
+  if (!allowedStatuses.includes(status)) {
+    return json(
+      {
+        error:
+          "This Razorpay order has not been paid. It cannot be processed until payment is confirmed.",
+      },
+      400,
+    );
+  }
+}
 
       // ------------------------------------------------------------
       // 2. Prevent unnecessary duplicate status updates

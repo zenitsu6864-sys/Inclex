@@ -142,14 +142,38 @@ const total = subtotal + shipping;
           },
           theme: { color: "#111111" },
           image: undefined,
-          modal: {
-            ondismiss: () => {
-              setPlacing(false);
-              toast("Payment cancelled", {
-                description: "Your order is on hold. Retry anytime.",
-              });
-            },
-          },
+modal: {
+  ondismiss: async () => {
+    try {
+      const cancelResponse = await fetch("/api/checkout/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: data.orderId,
+        }),
+      });
+
+      const cancelData = await cancelResponse.json();
+
+      if (!cancelResponse.ok || !cancelData.ok) {
+        console.warn(
+          "Could not mark order as cancelled:",
+          cancelData.error,
+        );
+      }
+    } catch (error) {
+      console.error("Payment cancellation error:", error);
+    }
+
+    setPlacing(false);
+
+    toast("Payment cancelled", {
+      description: "Your payment was cancelled and the order was not placed.",
+    });
+  },
+},
           handler: async (resp) => {
             try {
               const v = await fetch("/api/checkout/verify", {
