@@ -41,20 +41,15 @@ export const metadata = {
 
   openGraph: {
     title: "INCLEX | Keyfume – Carry Your Signature Fragrance Anywhere",
-
     description:
       "Discover Keyfume by INCLEX – a premium refillable perfume keychain designed for portability, elegance, and everyday convenience.",
-
     type: "website",
-
     siteName: "INCLEX",
   },
 
   twitter: {
     card: "summary_large_image",
-
     title: "INCLEX | Keyfume – Premium Refillable Perfume Keychain",
-
     description:
       "Carry your favorite fragrance everywhere with Keyfume by INCLEX. Refillable, compact, leak-proof, and designed for everyday luxury.",
   },
