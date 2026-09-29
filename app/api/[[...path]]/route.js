@@ -28,6 +28,7 @@ import {
 import {
   sendOrderEmail,
   sendOrderStatusEmail,
+  sendAdminNewOrderEmail,
   sendResetEmail,
   sendInquiryReplyEmail,
   makeResetToken,
@@ -283,56 +284,49 @@ export async function GET(request) {
       return json({ product: p });
     }
 
-if (parts[0] === "products") {
-  const db = await getDb();
-  let list = [];
+    if (parts[0] === "products") {
+      const db = await getDb();
+      let list = [];
 
-  if (db) {
-    await ensureSeed(db);
+      if (db) {
+        await ensureSeed(db);
 
-    list = await db
-      .collection("products")
-      .find(
-        {
-          status: "published",
-        },
-        {
-          projection: {
-            _id: 0,
-          },
-        },
-      )
-      .toArray();
-  }
+        list = await db
+          .collection("products")
+          .find(
+            {
+              status: "published",
+            },
+            {
+              projection: {
+                _id: 0,
+              },
+            },
+          )
+          .toArray();
+      }
 
-  const q = (url.searchParams.get("q") || "").toLowerCase();
-  const category = url.searchParams.get("category");
+      const q = (url.searchParams.get("q") || "").toLowerCase();
+      const category = url.searchParams.get("category");
 
-  if (q) {
-    list = list.filter((p) =>
-      `${p.name || ""} ${p.subtitle || ""}`
-        .toLowerCase()
-        .includes(q),
-    );
-  }
+      if (q) {
+        list = list.filter((p) =>
+          `${p.name || ""} ${p.subtitle || ""}`.toLowerCase().includes(q),
+        );
+      }
 
-  if (category && category !== "All Products") {
-    list = list.filter((p) =>
-      category === "Personalized"
-        ? p.features?.some((f) => /personal/i.test(f))
-        : p.material === category,
-    );
-  }
+      if (category && category !== "All Products") {
+        list = list.filter((p) =>
+          category === "Personalized"
+            ? p.features?.some((f) => /personal/i.test(f))
+            : p.material === category,
+        );
+      }
 
-  return json(
-    { products: list },
-    200,
-    {
-      "Cache-Control":
-        "public, s-maxage=60, stale-while-revalidate=300",
-    },
-  );
-}
+      return json({ products: list }, 200, {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      });
+    }
 
     if (parts[0] === "faqs") {
       return json({
@@ -1305,7 +1299,15 @@ export async function POST(request) {
       });
 
       if (updated) {
-        sendOrderEmail(updated).catch(() => {});
+        // Customer order confirmation
+        sendOrderEmail(updated).catch((err) => {
+          console.error("Customer order email failed:", err);
+        });
+
+        // Admin new-order notification
+        sendAdminNewOrderEmail(updated).catch((err) => {
+          console.error("Admin new-order notification failed:", err);
+        });
       }
 
       return json({
@@ -1395,12 +1397,22 @@ export async function POST(request) {
       // COD branch
       if (db) {
         await db.collection("orders").insertOne(record);
+
         await log(db, "order.placed", {
           orderNumber: record.orderNumber,
           total: record.total,
           userId: record.userId,
         });
-        sendOrderEmail(record).catch(() => {});
+
+        // Customer order confirmation
+        sendOrderEmail(record).catch((err) => {
+          console.error("Customer order email failed:", err);
+        });
+
+        // Admin new-order notification
+        sendAdminNewOrderEmail(record).catch((err) => {
+          console.error("Admin new-order notification failed:", err);
+        });
       }
       return json({
         ok: true,
@@ -1726,27 +1738,24 @@ export async function POST(request) {
       const oldStatus = existingOrder.status || "placed";
 
       // ------------------------------------------------------------
-// Razorpay payment protection
-// ------------------------------------------------------------
-if (
-  existingOrder.payment === "razorpay" &&
-  existingOrder.paymentStatus !== "paid"
-) {
-  const allowedStatuses = [
-    "payment_pending",
-    "cancelled",
-  ];
+      // Razorpay payment protection
+      // ------------------------------------------------------------
+      if (
+        existingOrder.payment === "razorpay" &&
+        existingOrder.paymentStatus !== "paid"
+      ) {
+        const allowedStatuses = ["payment_pending", "cancelled"];
 
-  if (!allowedStatuses.includes(status)) {
-    return json(
-      {
-        error:
-          "This Razorpay order has not been paid. It cannot be processed until payment is confirmed.",
-      },
-      400,
-    );
-  }
-}
+        if (!allowedStatuses.includes(status)) {
+          return json(
+            {
+              error:
+                "This Razorpay order has not been paid. It cannot be processed until payment is confirmed.",
+            },
+            400,
+          );
+        }
+      }
 
       // ------------------------------------------------------------
       // 2. Prevent unnecessary duplicate status updates
