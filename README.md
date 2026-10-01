@@ -4,7 +4,7 @@
 
 A production-grade, luxury e-commerce platform for premium leather keychains. Ships with a full public storefront, customer accounts, a bespoke customization studio, a 25-module admin panel, real payment integration (Razorpay), transactional email (Resend), and a homepage CMS that goes live instantly — no code changes required.
 
-Live preview: **https://craft-refine.preview.emergentagent.com**
+Live preview: **https://inclexofficial.com/**
 
 ---
 
@@ -417,18 +417,6 @@ All routes are under `/api/*`. JSON in, JSON out. CORS enabled.
 
 ## 🔐 Default Credentials
 
-### Admin
-- URL: **`/admin/login`**
-- Email: `admin@inclex.com`
-- Password: `inclex2025`
-
-> **Change these immediately in production** by editing `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` and rotating `ADMIN_SECRET`.
-
-### Test Customer (create via `/signup`)
-No pre-seeded customer accounts. Sign up any email through the UI.
-
----
-
 ## 🧪 Testing
 
 ### Backend curl tests
@@ -530,4 +518,4 @@ Proprietary — © Inclex. All rights reserved.
 
 ---
 
-**Made in Bengaluru, India** ♥
+**Made in Dhar, India** ♥
