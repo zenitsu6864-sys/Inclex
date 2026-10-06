@@ -7,11 +7,11 @@ const DOCS = {
     title: 'Privacy Policy',
     updated: 'Effective from May 2025',
     sections: [
-      { h: 'Who we are', b: 'Inclex (“we”, “us”) is a brand of premium personal accessories based in Bengaluru, India. We collect only the information required to fulfil your order and improve your shopping experience.' },
+      { h: 'Who we are', b: 'Inclex (“we”, “us”) is a brand of premium personal accessories based in Dhar, India. We collect only the information required to fulfil your order and improve your shopping experience.' },
       { h: 'What we collect', b: 'Contact details (name, email, phone), shipping address, payment method (via our PCI-compliant partner), order history, and anonymous website analytics.' },
       { h: 'How we use it', b: 'To process orders, respond to inquiries, deliver personalized products, and — with your consent — send occasional updates about new pieces.' },
       { h: 'Third parties', b: 'We share data only with logistics partners, payment processors and analytics providers strictly for fulfilment. We never sell your data.' },
-      { h: 'Your rights', b: 'You can request access, correction or deletion of your data anytime by writing to privacy@inclex.com.' },
+      { h: 'Your rights', b: 'You can request access, correction or deletion of your data anytime by writing to info@inclex.com.' },
       { h: 'Cookies', b: 'We use essential cookies to run the site and optional analytics cookies to improve it. You can disable non-essential cookies in your browser settings.' },
     ],
   },
