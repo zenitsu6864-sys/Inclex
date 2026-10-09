@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Heart,
@@ -28,6 +29,30 @@ export default function ProductDetail({ product, related }) {
   const [qty, setQty] = useState(1);
   const [engraving, setEngraving] = useState("");
   const { add } = useCart();
+
+  
+const pathname = usePathname();
+const pixelViewKey = useRef("");
+
+useEffect(() => {
+  if (!product?.id || !window.fbq) return;
+
+  const viewKey = `${product.id}:${pathname}`;
+
+  // Avoid duplicate events for the same product route.
+  if (pixelViewKey.current === viewKey) return;
+
+  pixelViewKey.current = viewKey;
+
+  window.fbq("track", "ViewContent", {
+    content_ids: [String(product.id)],
+    content_name: product.name,
+    content_type: "product",
+    value: Number(product.price),
+    currency: product.currency || "INR",
+  });
+}, [product, pathname]);
+
 
   return (
     <main className="min-h-screen bg-[#F8F7F4]">

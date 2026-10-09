@@ -2,6 +2,9 @@ import { Playfair_Display, Inter } from "next/font/google";
 import Script from "next/script";
 import { Providers } from "./providers";
 import "./globals.css";
+// meta pixel
+import { Suspense } from "react";
+import MetaPixel from "../components/MetaPixel";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -84,10 +87,7 @@ export default function RootLayout({ children }) {
               strategy="afterInteractive"
             />
 
-            <Script
-              id="google-analytics"
-              strategy="afterInteractive"
-            >
+            <Script id="google-analytics" strategy="afterInteractive">
               {`
                 window.dataLayer = window.dataLayer || [];
 
@@ -103,6 +103,10 @@ export default function RootLayout({ children }) {
             </Script>
           </>
         )}
+
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
       </body>
     </html>
   );
