@@ -1,27 +1,37 @@
 
 "use client";
 
-import React from "react";
-
+import React, { useEffect, useRef } from "react";
 import Script from "next/script";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
 
 const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID;
+
+declare global {
+  interface Window {
+    fbq?: (...args: any[]) => void;
+    _fbq?: (...args: any[]) => void;
+  }
+}
 
 export default function MetaPixel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
-  const firstRender = useRef(true);
+  const lastPageRef = useRef("");
 
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
-    }
+    if (!pixelId || !window.fbq) return;
 
-    if (window.fbq) {
+    const currentPage = `${pathname}?${searchParamsString}`;
+
+    if (lastPageRef.current === currentPage) return;
+
+    lastPageRef.current = currentPage;
+
+    // The initial PageView is sent during Pixel initialization.
+    // Track subsequent client-side navigation here.
+    if (window.fbq && lastPageRef.current !== "") {
       window.fbq("track", "PageView");
     }
   }, [pathname, searchParamsString]);
@@ -42,11 +52,14 @@ export default function MetaPixel() {
           n.queue=[];t=b.createElement(e);t.async=!0;
           t.src=v;s=b.getElementsByTagName(e)[0];
           s.parentNode.insertBefore(t,s)}
-          (window, document,'script',
+          (window,document,'script',
           'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${pixelId}');
-          fbq('track', 'PageView');
+          fbq('init','${pixelId}');
+          fbq('track','PageView');
         `,
+      }}
+      onError={(error) => {
+        console.error("Meta Pixel script failed to load:", error);
       }}
     />
   );
