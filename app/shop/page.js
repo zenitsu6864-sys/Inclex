@@ -54,7 +54,7 @@ export default function ShopPage() {
     async function loadProducts() {
       try {
         const res = await fetch("/api/products", {
-          cache: "force-cache",
+          cache: "no-store",
         });
 
         const data = await res.json();

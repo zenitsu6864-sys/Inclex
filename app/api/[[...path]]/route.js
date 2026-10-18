@@ -2160,18 +2160,15 @@ function defaultHomepage() {
     heroPrimaryHref: "/shop",
     heroSecondaryCta: "Customize Yours",
     heroSecondaryHref: "/customize",
-    heroVideo:
-      "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-craftsman-working-on-a-leather-belt-45735-large.mp4",
-    heroPoster:
-      "https://images.pexels.com/photos/33242820/pexels-photo-33242820.jpeg?auto=compress&cs=tinysrgb&w=2400&q=85",
+    heroVideo: "/uploads/videos/1785952292423-fiizsgrxiab.mp4",
+    heroPoster: "/uploads/images/1785871863078-9jsnapnecpt.jpeg",
     loginBanner: "/uploads/images/login-banner.jpg",
     signupBanner: "/uploads/images/signup-banner.jpg",
     experienceEyebrow: "Experience Inclex",
     experienceHeading: "Crafted With Purpose",
     experienceSubtitle:
       "Every detail is designed with intention. Watch how Inclex comes to life.",
-    experienceVideo:
-      "https://assets.mixkit.co/videos/preview/mixkit-craftsman-hitting-a-leather-piece-with-a-hammer-45737-large.mp4",
+    experienceVideo: "/uploads/videos/1785865816732-m28nmwtuk1i.mp4",
     customizeHeading: "Customize Your Keychain",
     customizeSubtitle:
       "Add your name, initials or logo and create something truly yours.",
