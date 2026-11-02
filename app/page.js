@@ -20,12 +20,15 @@ import { DEFAULT_HOMEPAGE, fetchHomepage } from "@/lib/data/content";
 import Image from "next/image";
 
 // ---------- Hero -------------------------------------------------------------
+
+
 function Hero({ c }) {
   const videoRef = useRef(null);
   const [muted, setMuted] = useState(true);
+
   const { scrollY } = useScroll();
-  const parY = useTransform(scrollY, [0, 800], [0, 120]);
-  const parScale = useTransform(scrollY, [0, 800], [1, 1.08]);
+  const parY = useTransform(scrollY, [0, 800], [0, 50]);
+  const parScale = useTransform(scrollY, [0, 800], [1, 1.04]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -35,56 +38,22 @@ function Hero({ c }) {
     if (p?.catch) p.catch(() => {});
   }, [c.heroVideo]);
 
-  // Split heading — allow "Word Word ... Last." pattern for gold italic on last word
   const parts = (c.heroHeading || "").trim().split(" ");
   const last = parts.pop();
   const head = parts.join(" ");
 
   return (
-    <section className="relative min-h-[100svh] w-full overflow-hidden bg-black text-white">
-      <div className="container-editorial relative z-10 grid min-h-[100svh] grid-cols-1 lg:grid-cols-12 items-center gap-8 pb-24 pt-24 md:pt-40 overflow-x-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-         className="lg:col-span-4 order-1"
-        >
-          <div className="eyebrow mb-6 flex items-center gap-3">
-            <span className="hairline" />
-            {c.heroEyebrow}
-          </div>
-       <h1 className="font-sans text-[44px] sm:text-[52px] md:text-[68px] lg:text-[78px] leading-[1.02] tracking-tight break-words">
-            {head ? (
-              <>
-                {head}
-                <br />
-              </>
-            ) : null}
-            <span className="italic text-[#C9A227]">{last}</span>
-          </h1>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 md:text-[15px]">
-            {c.heroSubtitle}
-          </p>
-          <div className="mt-10 flex flex-wrap items-center gap-4">
-            <Link
-              href={c.heroPrimaryHref || "/shop"}
-              className="btn-gold inline-flex"
-            >
-              {c.heroPrimaryCta}
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-        </motion.div>
+   <section className="relative min-h-[100svh] w-full overflow-hidden bg-black text-white pt-[60px] md:pt-[64px] pb-20">
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-          className="lg:col-span-8 order-2 mt-8 lg:mt-0"
-        >
+      {/* Full-width video frame - header stays outside */}
+      <div className="container-editorial relative mt-[38px]">
+
+        <div className="relative h-[min(78svh,700px)] min-h-[480px] w-full overflow-hidden rounded-sm ring-1 ring-white/10">
+
+          {/* Background video */}
           <motion.div
             style={{ y: parY, scale: parScale }}
-          className="relative w-full max-w-full aspect-[4/5] sm:aspect-[16/10] overflow-hidden rounded-sm shadow-[0_50px_120px_-30px_rgba(0,0,0,0.7)] ring-1 ring-white/5"
+            className="absolute inset-0"
           >
             <video
               ref={videoRef}
@@ -99,38 +68,78 @@ function Hero({ c }) {
             >
               <source src={c.heroVideo} type="video/mp4" />
             </video>
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/10 to-transparent" />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-            <div className="pointer-events-none absolute inset-0 grain" />
-            <button
-              onClick={() => {
-                if (!videoRef.current) return;
-                videoRef.current.muted = !videoRef.current.muted;
-                setMuted(videoRef.current.muted);
-              }}
-              aria-label={muted ? "Unmute video" : "Mute video"}
-              className="absolute bottom-5 right-5 grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
-            >
-              {muted ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
-            </button>
           </motion.div>
-        </motion.div>
+
+          {/* Dark overlays for text readability */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/55 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 grain" />
+
+          {/* Existing hero text */}
+          <div className="relative z-10 flex h-full items-center px-6 sm:px-10 md:px-11">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                duration: 1,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+              className="w-full max-w-xl"
+            >
+              <div className="eyebrow mb-6 flex items-center gap-3">
+                <span className="hairline" />
+                {c.heroEyebrow}
+              </div>
+
+              <h1 className="font-sans text-[40px] sm:text-[52px] md:text-[68px] lg:text-[72px] leading-[1.02] tracking-tight break-words">
+                {head ? (
+                  <>
+                    {head}
+                    <br />
+                  </>
+                ) : null}
+                <span className="italic text-[#C9A227]">
+                  {last}
+                </span>
+              </h1>
+
+              <p className="mt-6 max-w-md text-base leading-relaxed text-white/70 md:text-[15px]">
+                {c.heroSubtitle}
+              </p>
+
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Link
+                  href={c.heroPrimaryHref || "/shop"}
+                  className="btn-gold inline-flex"
+                >
+                  {c.heroPrimaryCta}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Mute / Unmute */}
+          <button
+            onClick={() => {
+              if (!videoRef.current) return;
+              videoRef.current.muted = !videoRef.current.muted;
+              setMuted(videoRef.current.muted);
+            }}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+            className="absolute bottom-5 right-5 z-20 grid h-11 w-11 place-items-center rounded-full border border-white/25 bg-black/40 text-white backdrop-blur-md transition hover:bg-black/60"
+          >
+            {muted ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </button>
+
+        </div>
       </div>
 
-      <div
-        className="pointer-events-none absolute inset-0 -z-0 opacity-40"
-        style={{
-          backgroundImage: `url(${c.heroPoster})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          filter: "blur(60px) saturate(0.7) brightness(0.35)",
-        }}
-      />
-
+      {/* Scroll indicator */}
       <div className="absolute bottom-6 left-0 right-0 z-20">
         <div className="container-editorial flex items-center justify-between">
           <div className="flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/70">
@@ -138,14 +147,18 @@ function Hero({ c }) {
             <span className="inline-block h-px w-10 bg-white/40" />
             <ArrowDown className="h-4 w-4 animate-bounce" />
           </div>
+
           <div className="hidden md:flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-white/50">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#C9A227]" /> 01 / 04
+            <span className="h-1.5 w-1.5 rounded-full bg-[#C9A227]" />
+            01 / 04
           </div>
         </div>
       </div>
+
     </section>
   );
 }
+
 
 // ---------- Experience -------------------------------------------------------
 function Experience({ c }) {
