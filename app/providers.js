@@ -1,9 +1,12 @@
-'use client';
-import { Toaster } from 'sonner';
-import { CartProvider } from '@/components/site/CartContext';
-import CartDrawer from '@/components/site/CartDrawer';
-import { UserProvider } from '@/components/site/UserContext';
-import { WishlistProvider } from '@/components/site/WishlistContext';
+
+"use client";
+
+import { Toaster } from "sonner";
+import { CartProvider } from "@/components/site/CartContext";
+import CartDrawer from "@/components/site/CartDrawer";
+import { UserProvider } from "@/components/site/UserContext";
+import { WishlistProvider } from "@/components/site/WishlistContext";
+import InclexAssistant from "@/components/site/InclexAssistant";
 
 export function Providers({ children }) {
   return (
@@ -11,8 +14,18 @@ export function Providers({ children }) {
       <WishlistProvider>
         <CartProvider>
           {children}
+
           <CartDrawer />
-          <Toaster position="bottom-right" theme="light" richColors closeButton />
+
+          {/* INCLEX AI Customer Support */}
+          <InclexAssistant />
+
+          <Toaster
+            position="bottom-right"
+            theme="light"
+            richColors
+            closeButton
+          />
         </CartProvider>
       </WishlistProvider>
     </UserProvider>

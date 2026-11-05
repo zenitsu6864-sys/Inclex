@@ -40,6 +40,7 @@ export const NAV = [
   ]},
   { section: 'Communication', items: [
     { href: '/admin/inquiries', label: 'Inquiries', icon: MessagesSquare },
+    { href: '/admin/assistant', label: 'AI Conversations', icon: Sparkles },
     { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   ]},
   { section: 'Insights', items: [
